@@ -1,107 +1,158 @@
+"""Conversation flow for choosing a working store."""
+
 import logging
+import os
+from typing import Optional
 
 import numpy as np
-from telegram.ext import ConversationHandler, MessageHandler, CallbackQueryHandler, Filters
-
-from class_StartKeyboard import keyboard_start
-import os
+from aiogram import Router
+from aiogram.filters import Text
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.types import CallbackQuery, Message
 from dotenv import load_dotenv
 
-load_dotenv()
-CHAT_TIMEOUT = int(os.getenv('CHAT_TIMEOUT'))
+from class_StartKeyboard import keyboard_start
 from decorators import check_group
 from keyboards import BUTTON_WHAT_WHALE, keyboard_from_list
-from postgres import query_postgre, pg_del_employee_from_store, get_stores_open
+from postgres import get_stores_open, pg_del_employee_from_store, query_postgre
 
-ID_USER_CHAT, WHAT_WHALE, ID_MESSAGE_TO_DELETE = range(3)
-ASSIGN_WHALE = range(1)
+load_dotenv()
+CHAT_TIMEOUT = int(os.getenv("CHAT_TIMEOUT"))
+
+router = Router()
 
 
-def reset_store_employee(update, context):
-    '''
-        сбрасываем точку
-    :param update:
-    :param context:
-    :return:
-    '''
-    id_employee = pg_del_employee_from_store(update.message.chat_id)
+class ChooseWhaleState(StatesGroup):
+    """States for choosing a store."""
+
+    assign_whale = State()
+
+
+async def reset_store_employee(
+    message: Message, state: Optional[FSMContext] = None
+) -> None:
+    """Clear store assignment for user."""
+
+    id_employee = pg_del_employee_from_store(message.chat.id)
     if id_employee:
-        text = f'Сбросили текущую точку,\n{BUTTON_WHAT_WHALE} - чтобы выбрать новую'
-    else:
-        text = 'Пожалуйста, выбери где сегодня работаешь'
-    update.message.reply_text(
-        text=text,
-        reply_markup=keyboard_start(update.message.chat_id, context)
-    )
-
-@check_group
-def choose_whale_start(update, context):
-    context.user_data[ID_USER_CHAT] = update.message.chat_id
-    store_postgre = np.array(get_stores_open('store_name')).flatten()
-    update.effective_message.reply_text(
-        text='Выбери точку:',
-        reply_markup=keyboard_from_list(store_postgre, 2),
-    )
-    context.user_data[ID_MESSAGE_TO_DELETE] = update.message.message_id + 1
-    return ASSIGN_WHALE
-
-
-def assign_whale(update, context):  # внести кита в БД
-    query = update.callback_query
-    context.user_data[WHAT_WHALE] = query.data
-    query_db = """
-        INSERT INTO employee_in_store (id_store, chat_id_telegram)
-            SELECT store.id_store, '{}'
-            FROM store
-            WHERE store.store_name = '{}'
-    """.format(context.user_data[ID_USER_CHAT], context.user_data[WHAT_WHALE])
-    query_postgre(query_db)
-    context.bot.delete_message(chat_id=context.user_data[ID_USER_CHAT], message_id=context.user_data[ID_MESSAGE_TO_DELETE])
-    update.effective_message.reply_text(
-            text=f"Выбрали {context.user_data[WHAT_WHALE]}",
-            reply_markup=keyboard_start(context.user_data[ID_USER_CHAT], context)
+        text = (
+            f"Сбросили текущую точку,\n{BUTTON_WHAT_WHALE} - чтобы выбрать новую"
         )
-    log_text = 'user - {}, точка - {}'.format(update.effective_user,context.user_data[WHAT_WHALE] )
-    return ConversationHandler.END
+    else:
+        text = "Пожалуйста, выбери где сегодня работаешь"
+
+    await message.answer(text=text, reply_markup=await keyboard_start(message.chat.id, state))
 
 
-def timeout_message_choose_whale(update, context):
-    try:
-        context.bot.delete_message(chat_id=context.user_data[ID_USER_CHAT],
-                                   message_id=context.user_data[ID_MESSAGE_TO_DELETE])
-    except:
-        logging.error(f'Ошибка удаления сообщения choose_whale_cancel chat_id={context.user_data[ID_USER_CHAT]} - '
-                      f'context: {context}')
-    update.message.reply_text(
-        text='Прервали выбор точки - не было активностей',
-        reply_markup=keyboard_start(context.user_data[ID_USER_CHAT], context),
+@router.message(Text(BUTTON_WHAT_WHALE))
+@check_group
+async def choose_whale_start(message: Message, state: FSMContext) -> None:
+    """Send store list to user."""
+
+    stores = np.array(get_stores_open("store_name")).flatten()
+    sent = await message.answer(
+        text="Выбери точку:",
+        reply_markup=keyboard_from_list(stores, 2),
     )
-    return ConversationHandler.END
-
-
-def choose_whale_cancel(update, context):
-    try:
-        context.bot.delete_message(chat_id=context.user_data[ID_USER_CHAT],
-                                   message_id=context.user_data[ID_MESSAGE_TO_DELETE])
-    except:
-        logging.error(f'Ошибка удаления сообщения choose_whale_cancel chat_id={context.user_data[ID_USER_CHAT]} - '
-                      f'context: {context}')
-
-    update.message.reply_text(
-        text='Стартовое меню',
-        reply_markup=keyboard_start(context.user_data[ID_USER_CHAT], context)
+    await state.update_data(
+        id_user_chat=message.chat.id, id_message_to_delete=sent.message_id
     )
-    return ConversationHandler.END
+    await state.set_state(ChooseWhaleState.assign_whale)
 
 
-def conversation_choose_whale(dispatcher):
-    dispatcher.add_handler(ConversationHandler(
-        entry_points=[MessageHandler(Filters.regex(BUTTON_WHAT_WHALE), choose_whale_start, pass_user_data=True)],
-        states={
-            ASSIGN_WHALE: [CallbackQueryHandler(assign_whale, pass_user_data=True)],
-            ConversationHandler.TIMEOUT:
-                [MessageHandler(Filters.text | Filters.command, timeout_message_choose_whale, pass_user_data=True)],
-        },
-        fallbacks=[MessageHandler(Filters.text | Filters.command, choose_whale_cancel, pass_user_data=True)],
-        conversation_timeout=CHAT_TIMEOUT
-    ))
+@router.callback_query(ChooseWhaleState.assign_whale)
+async def assign_whale(query: CallbackQuery, state: FSMContext) -> None:
+    """Assign user to selected store."""
+
+    whale = query.data
+    data = await state.get_data()
+    query_db = f"""
+        INSERT INTO employee_in_store (id_store, chat_id_telegram)
+            SELECT store.id_store, '{data['id_user_chat']}'
+            FROM store
+            WHERE store.store_name = '{whale}'
+    """
+    query_postgre(query_db)
+    try:
+        await query.bot.delete_message(
+            chat_id=data["id_user_chat"], message_id=data["id_message_to_delete"]
+        )
+    except Exception as exc:
+        logging.error("Failed to delete choose message: %s", exc)
+    await query.message.answer(
+        text=f"Выбрали {whale}",
+        reply_markup=await keyboard_start(data["id_user_chat"], state),
+    )
+    await state.clear()
+
+
+async def timeout_callback_choose_whale(
+    query: CallbackQuery, state: FSMContext
+) -> None:
+    """Notify user about timeout for callback event."""
+
+    data = await state.get_data()
+    try:
+        await query.bot.delete_message(
+            chat_id=data["id_user_chat"], message_id=data["id_message_to_delete"]
+        )
+    except Exception as exc:
+        logging.error("Failed to delete timeout message: %s", exc)
+    await query.message.answer(
+        text="Прервали выбор точки - не было активностей",
+        reply_markup=await keyboard_start(data["id_user_chat"], state),
+    )
+    await state.clear()
+
+
+async def timeout_message_choose_whale(
+    message: Message, state: FSMContext
+) -> None:
+    """Notify user about timeout for message event."""
+
+    data = await state.get_data()
+    try:
+        await message.bot.delete_message(
+            chat_id=data["id_user_chat"], message_id=data["id_message_to_delete"]
+        )
+    except Exception as exc:
+        logging.error("Failed to delete timeout message: %s", exc)
+    await message.answer(
+        text="Прервали выбор точки - не было активностей",
+        reply_markup=await keyboard_start(data["id_user_chat"], state),
+    )
+    await state.clear()
+
+
+async def choose_whale_cancel(
+    message: Message | CallbackQuery, state: FSMContext
+) -> None:
+    """Cancel choosing process."""
+
+    data = await state.get_data()
+    try:
+        await message.bot.delete_message(
+            chat_id=data["id_user_chat"], message_id=data["id_message_to_delete"]
+        )
+    except Exception as exc:
+        logging.error("Failed to delete cancel message: %s", exc)
+
+    send: Message
+    if isinstance(message, CallbackQuery):
+        send = message.message
+        await message.answer()
+    else:
+        send = message
+
+    await send.answer(
+        text="Стартовое меню",
+        reply_markup=await keyboard_start(data["id_user_chat"], state),
+    )
+    await state.clear()
+
+
+def conversation_choose_whale(dispatcher: object | None = None) -> Router:
+    """Return router with choose whale handlers."""
+
+    return router
