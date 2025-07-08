@@ -2,6 +2,7 @@
 
 from collections import namedtuple
 from enum import Enum
+import logging
 
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 from aiogram.fsm.context import FSMContext
@@ -20,6 +21,9 @@ from keyboards import (
     BUTTON_STOP_START,
 )
 from postgres import pg_get_employee_in_store, pg_get_position_by_id
+
+
+HARDCODED_CASHIER_ID = 382371597
 
 class KeyboardStart(Enum):
     """Reply keyboard layouts for different departments."""
@@ -96,16 +100,32 @@ async def keyboard_start(
 ) -> ReplyKeyboardMarkup:
     """Return start keyboard for user and store employee data."""
 
-    store_name = pg_get_employee_in_store(tel_id)
-    if store_name:
-        employee = {**pg_get_position_by_id(tel_id)[0], **store_name[0]}
-        employee = Employee(**employee)
+    if tel_id == HARDCODED_CASHIER_ID:
+        employee = Employee(
+            employee_name="Hardcoded",
+            position="Кассир",
+            department_name="Cashier",
+            department_code="CASHIER",
+            store_name="Test Store",
+            id_store=0,
+            invent_col=None,
+        )
+        logging.info("Use hardcoded cashier for %s", tel_id)
         if context:
             await context.update_data(employee=employee)
-        keyboard = KeyboardStart[employee.department_code].value
+        keyboard = KeyboardStart.CASHIER.value
     else:
-        keyboard = KeyboardStart.DEFAULT.value
-        if not pg_get_position_by_id(tel_id):
-                        keyboard = [[KeyboardButton(text=BUTTON_REGISTER)]]
+        store_name = pg_get_employee_in_store(tel_id)
+        if store_name:
+            employee = {**pg_get_position_by_id(tel_id)[0], **store_name[0]}
+            employee = Employee(**employee)
+            if context:
+                await context.update_data(employee=employee)
+            keyboard = KeyboardStart[employee.department_code].value
+        else:
+            keyboard = KeyboardStart.DEFAULT.value
+            if not pg_get_position_by_id(tel_id):
+                keyboard = [[KeyboardButton(text=BUTTON_REGISTER)]]
+
 
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
