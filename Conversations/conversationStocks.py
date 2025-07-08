@@ -13,7 +13,7 @@ from typing import Union
 import pytz
 from aiogram import Router
 from aiogram.enums import ParseMode
-from aiogram.filters import Text
+from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
@@ -177,7 +177,7 @@ def keyboard_stock(employee: Employee) -> StockKeyboardText | None:
     )
 
 
-@router.message(Text(BUTTON_STOCKS))
+@router.message(F.text == BUTTON_STOCKS)
 @check_group
 async def start_stock_conversation(message: Message, state: FSMContext) -> None:
     """Entry point for stock actions."""
@@ -389,7 +389,7 @@ async def _cancel_reply(
     await state.clear()
 
 
-@router.message(Text(BUTTON_CANCEL_CONVERSATION))
+@router.message(F.text == BUTTON_CANCEL_CONVERSATION)
 async def stock_cancel_message(message: Message, state: FSMContext) -> None:
     """Cancel stock dialog via message."""
 
@@ -398,7 +398,7 @@ async def stock_cancel_message(message: Message, state: FSMContext) -> None:
     await _cancel_reply(message, f"Прервали ,\n{BUTTON_STOCKS}\n\nВернулись в cтартовое меню", state)
 
 
-@router.callback_query(Text(BUTTON_CANCEL_CONVERSATION))
+@router.callback_query(F.data == BUTTON_CANCEL_CONVERSATION)
 async def stock_cancel_callback(query: CallbackQuery, state: FSMContext) -> None:
     """Cancel stock dialog via callback."""
 
@@ -407,7 +407,7 @@ async def stock_cancel_callback(query: CallbackQuery, state: FSMContext) -> None
     await _cancel_reply(query, f"Прервали ,\n{BUTTON_STOCKS}\n\nВернулись в cтартовое меню", state)
 
 
-@router.callback_query(Text("timeout"))
+@router.callback_query(F.data == "timeout")
 async def stock_timeout_callback(query: CallbackQuery, state: FSMContext) -> None:
     """Handle callback timeout."""
 
@@ -415,7 +415,7 @@ async def stock_timeout_callback(query: CallbackQuery, state: FSMContext) -> Non
     await _cancel_reply(query, "Вернулись в стартовое меню", state)
 
 
-@router.message(Text("timeout"))
+@router.message(F.text == "timeout")
 async def stock_timeout_message(message: Message, state: FSMContext) -> None:
     """Handle message timeout."""
 
@@ -424,7 +424,7 @@ async def stock_timeout_message(message: Message, state: FSMContext) -> None:
     await _cancel_reply(message, f"Прервали ,\n{BUTTON_STOCKS} - не было активностей", state)
 
 
-@router.message(Text("/reset_store"))
+@router.message(F.text == "/reset_store")
 async def stock_reset_store(message: Message, state: FSMContext) -> None:
     """Reset current store assignment."""
 

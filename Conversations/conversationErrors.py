@@ -9,7 +9,7 @@ from typing import Optional
 import numpy as np
 from aiogram import Router
 from aiogram.enums import ParseMode
-from aiogram.filters import Text
+from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
@@ -54,7 +54,7 @@ class ErrorState(StatesGroup):
     confirm = State()
 
 
-@router.message(Text(BUTTON_ERROR_TITLE))
+@router.message(F.text == BUTTON_ERROR_TITLE)
 @check_group
 async def error_start(message: Message, state: FSMContext) -> None:
     """Start error input flow."""

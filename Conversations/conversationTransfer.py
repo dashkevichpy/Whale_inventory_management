@@ -7,7 +7,7 @@ import numpy as np
 import pytz
 from aiogram import Router
 from aiogram.enums import ParseMode
-from aiogram.filters import Text
+from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
@@ -57,7 +57,7 @@ class TransferState(StatesGroup):
     to_store = State()
 
 
-@router.message(Text(BUTTON_TRANSFER))
+@router.message(F.text == BUTTON_TRANSFER)
 async def transfer_start(message: Message, state: FSMContext) -> None:
     """Start transfer conversation."""
 
@@ -209,7 +209,7 @@ async def save_transfer(query: CallbackQuery, state: FSMContext) -> None:
         await state.clear()
 
 
-@router.message(Text(BUTTON_TRANSFER_CANCEL))
+@router.message(F.text == BUTTON_TRANSFER)
 async def transfer_cancel(message: Message, state: FSMContext) -> None:
     """Cancel transfer conversation."""
 

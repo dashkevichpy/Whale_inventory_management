@@ -6,7 +6,7 @@ from typing import Optional
 
 import numpy as np
 from aiogram import Router
-from aiogram.filters import Text
+from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
@@ -45,7 +45,7 @@ async def reset_store_employee(
     await message.answer(text=text, reply_markup=await keyboard_start(message.chat.id, state))
 
 
-@router.message(Text(BUTTON_WHAT_WHALE))
+@router.message(F.text == BUTTON_WHAT_WHALE)
 @check_group
 async def choose_whale_start(message: Message, state: FSMContext) -> None:
     """Send store list to user."""

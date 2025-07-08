@@ -7,7 +7,7 @@ from enum import Enum
 from typing import Union
 
 from aiogram import Router
-from aiogram.filters import Text
+from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
@@ -96,7 +96,7 @@ async def _cancel_reply(sender: Union[Message, CallbackQuery], state: FSMContext
     await state.clear()
 
 
-@router.message(Text(BUTTON_STOP_START))
+@router.message(F.text == BUTTON_STOP_START)
 @check_group
 async def stoplist_start(message: Message, state: FSMContext) -> None:
     """Entry point for stop list actions."""
@@ -121,7 +121,7 @@ async def stoplist_start(message: Message, state: FSMContext) -> None:
     await state.set_state(StopListState.dispatch)
 
 
-@router.callback_query(StopListState.dispatch, Text(StopAction.ADD.callback))
+@router.callback_query(StopListState.dispatch, F.data == StopAction.ADD.callback)
 async def stoplist_add(query: CallbackQuery, state: FSMContext) -> None:
     """Show available items to add to stop list."""
 
@@ -140,7 +140,7 @@ async def stoplist_add(query: CallbackQuery, state: FSMContext) -> None:
     await state.set_state(StopListState.add)
 
 
-@router.callback_query(StopListState.dispatch, Text(StopAction.REMOVE.callback))
+@router.callback_query(StopListState.dispatch, F.data == StopAction.REMOVE.callback)
 async def stoplist_remove(query: CallbackQuery, state: FSMContext) -> None:
     """Show active stop list for removal."""
 
@@ -189,14 +189,14 @@ async def stoplist_remove_select(query: CallbackQuery, state: FSMContext) -> Non
     await _to_dispatch(query.message, state, info=f"Сняли {nomenclature}")
 
 
-@router.message(Text(BUTTON_CANCEL_CONVERSATION))
+@router.message(F.text == BUTTON_CANCEL_CONVERSATION)
 async def stoplist_cancel_message(message: Message, state: FSMContext) -> None:
     """Cancel stop list dialog via message."""
 
     await _cancel_reply(message, state)
 
 
-@router.callback_query(Text(BUTTON_CANCEL_CONVERSATION))
+@router.callback_query(F.data == BUTTON_CANCEL_CONVERSATION)
 async def stoplist_cancel_callback(query: CallbackQuery, state: FSMContext) -> None:
     """Cancel stop list dialog via callback."""
 

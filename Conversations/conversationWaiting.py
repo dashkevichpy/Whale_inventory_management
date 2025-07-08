@@ -6,7 +6,7 @@ from typing import Any
 
 import numpy as np
 from aiogram import Router
-from aiogram.filters import Text
+from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
@@ -44,7 +44,7 @@ class WaitingState(StatesGroup):
     write_wait = State()
 
 
-@router.message(Text(BUTTON_WAIT_TITLE))
+@router.message(F.text == BUTTON_WAIT_TITLE)
 @check_group
 async def wait_start(message: Message, state: FSMContext) -> None:
     """Start waiting conversation."""
@@ -192,7 +192,7 @@ async def write_wait(query: CallbackQuery, state: FSMContext) -> None:
     await state.clear()
 
 
-@router.message(Text(BUTTON_WAIT_CANCEL))
+@router.message(F.text == BUTTON_WAIT_CANCEL)
 async def wait_cancel(message: Message, state: FSMContext) -> None:
     """Cancel waiting conversation."""
 

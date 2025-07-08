@@ -8,7 +8,7 @@ from typing import Any, Dict
 import numpy as np
 from aiogram import Router
 from aiogram.enums import ParseMode
-from aiogram.filters import Text
+from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, Message
@@ -44,7 +44,7 @@ class BreakageState(StatesGroup):
     confirm = State()
 
 
-@router.message(Text(BUTTON_BREAK_TITLE))
+@router.message(F.text == BUTTON_BREAK_TITLE)
 @check_group
 async def broken_start(message: Message, state: FSMContext) -> None:
     """Start breakage input."""
