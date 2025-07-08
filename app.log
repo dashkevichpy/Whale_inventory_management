@@ -1,0 +1,15 @@
+2023-02-18 05:18:57,099 - apscheduler.scheduler - INFO - Scheduler started
+2023-02-18 05:19:07,422 - apscheduler.scheduler - INFO - Added job "_trigger_timeout" to job store "default"
+2023-02-18 05:19:08,509 - apscheduler.scheduler - INFO - Removed job 0b3eef0759874498b6625139943dcce7
+2023-02-18 05:19:08,653 - apscheduler.scheduler - INFO - Added job "_trigger_timeout" to job store "default"
+2023-02-18 05:19:09,495 - apscheduler.scheduler - INFO - Removed job 5c77bfceb0d4481082eae163b656500e
+2023-02-18 05:19:09,656 - apscheduler.scheduler - INFO - Added job "_trigger_timeout" to job store "default"
+2023-02-18 05:19:11,349 - apscheduler.scheduler - INFO - Removed job 034303d283a745dda956aaa21a8a8f7b
+2023-02-18 05:19:11,451 - apscheduler.scheduler - INFO - Added job "_trigger_timeout" to job store "default"
+2023-02-18 05:19:12,985 - apscheduler.scheduler - INFO - Removed job aafec133a15f4042a14b1b726db8338f
+2023-02-18 05:19:13,074 - apscheduler.scheduler - INFO - Added job "_trigger_timeout" to job store "default"
+2023-02-18 05:19:14,438 - apscheduler.scheduler - INFO - Removed job d5f83bf064b348f583477caf3bb2e7db
+2023-02-18 05:19:14,514 - apscheduler.scheduler - INFO - Added job "_trigger_timeout" to job store "default"
+2023-02-18 05:19:19,336 - apscheduler.scheduler - INFO - Removed job 18a2ae50b91b4ec1bca0083e25117eb4
+2023-02-18 05:20:00,602 - telegram.ext.updater - INFO - Received signal 2 (SIGINT), stopping...
+2023-02-18 05:20:00,602 - apscheduler.scheduler - INFO - Scheduler has been shut down
