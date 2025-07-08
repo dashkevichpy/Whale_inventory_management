@@ -1,370 +1,392 @@
-import urllib.parse
+"""Conversation flow for recording employee errors."""
+
+from __future__ import annotations
+
 import logging
+import os
+from typing import Optional
 
 import numpy as np
-from telegram import ParseMode
-from telegram.ext import MessageHandler
-from telegram.ext import ConversationHandler
-from telegram.ext import CallbackQueryHandler
-from telegram.ext import Filters
-# import telegramcalendar
-from class_StartKeyboard import keyboard_start
-from decorators import check_group
-from keyboards import keyboard_yes_no, keyboard_accept_read, keyboard_from_list, keyboard_cancel_error
-
-from gSheet import insert_entry_errors_gs
-
-import os
+from aiogram import Router
+from aiogram.enums import ParseMode
+from aiogram.filters import Text
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.types import CallbackQuery, Message
 from dotenv import load_dotenv
 
+from class_StartKeyboard import keyboard_start
+from decorators import check_group
+from gSheet import insert_entry_errors_gs
+from keyboards import (
+    BUTTON_ERROR_CANCEL,
+    BUTTON_ERROR_TITLE,
+    keyboard_accept_read,
+    keyboard_cancel_error,
+    keyboard_from_list,
+    keyboard_yes_no,
+)
+from postgres import get_stores_open, query_postgre
+
 load_dotenv()
-CHAT_TIMEOUT = int(os.getenv('CHAT_TIMEOUT'))
-ERROR_ADMIN_ID = os.getenv('ERROR_ADMIN_ID')
+CHAT_TIMEOUT = int(os.getenv("CHAT_TIMEOUT"))
+ERROR_ADMIN_ID = os.getenv("ERROR_ADMIN_ID")
 
-from keyboards import BUTTON_ERROR_TITLE, BUTTON_ERROR_CANCEL
+PHOTO_ERROR_TYPE = [
+    "Качество заготовок",
+    "документы Корниенко",
+    "документы GH",
+]
 
-# индексы для диалога с ошибками
-from postgres import query_postgre, get_stores_open
-
-# кони, люди: тут смешаны и ключи словаря и индексы, ужасно
-ID_USER_CHAT_ERROR, USER_NAME_ERROR, WHICH_POST, WHAT_ERROR, WHAT_LOCATION, DATE_ERROR, DETAIL_COMMENT, \
-CHECK_MESSAGE_ERROR, CHAT_ID_NOT1, CHAT_ID_NOT2, PHOTO_ID, ADD_PHOTO, PHOTO_FILE_ID, GET_PHOTO, ID_MESSAGE_TO_DELETE = range(15)
-
-
-logging.basicConfig(level=logging.INFO, filename='app.log', filemode='w',
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-s = urllib.parse.quote('clck.ru/QyYfR')
-
-PHOTO_ERROR_TYPE = ['Качество заготовок', 'документы Корниенко', 'документы GH']
-
-# -------------------------ERRORS---------------------------------
+router = Router()
 
 
+class ErrorState(StatesGroup):
+    """States for error conversation."""
+
+    which_post = State()
+    what_error = State()
+    what_location = State()
+    date_error = State()
+    detail_comment = State()
+    add_photo = State()
+    get_photo = State()
+    confirm = State()
+
+
+@router.message(Text(BUTTON_ERROR_TITLE))
 @check_group
-def error_start(update, context):
-    context.user_data[ID_USER_CHAT_ERROR] = update.message.chat_id
-    context.user_data[USER_NAME_ERROR] = update.message.from_user.username
-    context.user_data[PHOTO_FILE_ID] = None
-    update.message.reply_text(
-        text='<b> Выбрали: </b> 📯Ошибка',
+async def error_start(message: Message, state: FSMContext) -> None:
+    """Start error input flow."""
+
+    await state.update_data(
+        id_user_chat=message.chat.id,
+        user_name=message.from_user.username,
+        photo_file_id=None,
+        id_message_to_delete=message.message_id + 2,
+    )
+
+    query_db = """
+        SELECT department_name
+        FROM errors_departments;
+    """
+    department = np.array(query_postgre(query_db)).flatten()
+
+    await message.answer(
+        text="<b> Выбрали: </b> 📯Ошибка",
         reply_markup=keyboard_cancel_error(),
         parse_mode=ParseMode.HTML,
     )
-    pgre = '''
-                SELECT department_name
-                FROM errors_departments;
-    '''
-    department = np.array(query_postgre(pgre)).flatten()
-
-    update.effective_message.reply_text(
-        text='Кто ошибся?',
-        # reply_markup=keyboard_position(),
+    await message.answer(
+        text="Кто ошибся?",
         reply_markup=keyboard_from_list(department, 2),
-
     )
-    context.user_data[ID_MESSAGE_TO_DELETE] = update.message.message_id + 2
-    return WHICH_POST
+    await state.set_state(ErrorState.which_post)
 
 
-def error_type(update, context):
-    query = update.callback_query
-    context.user_data[WHICH_POST] = query.data
-    # print('WHICH_POST - ', context.user_data[WHICH_POST])
+@router.callback_query(ErrorState.which_post)
+async def error_type(query: CallbackQuery, state: FSMContext) -> None:
+    """Select error type."""
 
-    pgre = '''
-        SELECT error_name,group_telegram_id,personal_telegram_id
+    await state.update_data(which_post=query.data)
+
+    query_db = f"""
+        SELECT error_name, group_telegram_id, personal_telegram_id
         FROM error_types
         INNER JOIN errors_departments USING(id_errors_categories)
-        WHERE department_name = '{}';
-        '''.format(context.user_data[WHICH_POST])
-    type_error = np.array(query_postgre(pgre))
-    try:
-        context.user_data[CHAT_ID_NOT1] = type_error[0, 1]
-        context.user_data[CHAT_ID_NOT2] = type_error[0, 2]
-    except:
-        logging.info(f'type_error[0, 1] error in ConversError {type_error},  '
-                     f'{context.user_data[WHICH_POST]} \n')
-        error_cancel(update, context)
+        WHERE department_name = '{query.data}';
+    """
+    type_error = np.array(query_postgre(query_db))
 
-    query.edit_message_text(
-        text=('<b>Ошиблись:</b> {}\n'
-              'Тип ошибки:'.format(context.user_data[WHICH_POST])),
+    try:
+        await state.update_data(
+            chat_id_not1=type_error[0, 1],
+            chat_id_not2=type_error[0, 2],
+        )
+    except Exception as exc:  # pragma: no cover - just logging
+        logging.info("type_error parse fail %s %s", type_error, exc)
+        await error_cancel(query, state)
+        return
+
+    await query.message.edit_text(
+        text=f"<b>Ошиблись:</b> {query.data}\nТип ошибки:",
         reply_markup=keyboard_from_list(type_error[:, 0].flatten(), 2),
         parse_mode=ParseMode.HTML,
     )
-    return WHAT_ERROR
+    await state.set_state(ErrorState.what_error)
 
 
-def error_location(update, context):
-    query = update.callback_query
-    context.user_data[WHAT_ERROR] = query.data
-    store_postgre = np.array(get_stores_open('store_name')).flatten()
-    store_postgre = np.insert(store_postgre, len(store_postgre), 'B2B')
-    query.edit_message_text(
-        text=('<b>Ошиблись: </b>{}\n'
-              '<b>Тип ошибки: </b>{}\n\n'
-              'Точка: '.format(context.user_data[WHICH_POST], context.user_data[WHAT_ERROR])),
-        reply_markup=keyboard_from_list(store_postgre, 2),  # выбор точки
-        parse_mode=ParseMode.HTML
+@router.callback_query(ErrorState.what_error)
+async def error_location(query: CallbackQuery, state: FSMContext) -> None:
+    """Select store where error occurred."""
+
+    await state.update_data(what_error=query.data)
+    stores = np.array(get_stores_open("store_name")).flatten()
+    stores = np.insert(stores, len(stores), "B2B")
+    data = await state.get_data()
+
+    await query.message.edit_text(
+        text=(
+            f"<b>Ошиблись: </b>{data['which_post']}\n"
+            f"<b>Тип ошибки: </b>{data['what_error']}\n\n"
+            "Точка: "
+        ),
+        reply_markup=keyboard_from_list(stores, 2),
+        parse_mode=ParseMode.HTML,
     )
-    return WHAT_LOCATION
+    await state.set_state(ErrorState.what_location)
 
 
-def error_date_time(update, context):
-    query = update.callback_query
-    context.user_data[WHAT_LOCATION] = query.data
-    query.edit_message_text(
-        text=('<b>Ошиблись:  </b>{}\n'
-              '<b>Тип ошибки:  </b>{}\n'
-              '<b>Точка:  </b>{}\n\n'
-              'Укажите дату / время ошибки, номер заказа: '.format(context.user_data[WHICH_POST], context.user_data[WHAT_ERROR],
-                                            context.user_data[WHAT_LOCATION])),
-        parse_mode=ParseMode.HTML
-    )
-    return DATE_ERROR
+@router.callback_query(ErrorState.what_location)
+async def error_date_time(query: CallbackQuery, state: FSMContext) -> None:
+    """Request date and time of the error."""
 
+    await state.update_data(what_location=query.data)
+    data = await state.get_data()
 
-def error_comment(update, context):
-    context.user_data[DATE_ERROR] = update.message.text
-    if update.message.text == BUTTON_ERROR_CANCEL:
-        error_cancel(update, context)
-        return ConversationHandler.END
-    else:
-        update.effective_message.reply_text(
-            text=('<b>Ошиблись:</b> {}\n'
-                  '<b>Тип ошибки:</b> {}\n'
-                  '<b>Точка:</b> {}\n'
-                  '<b>Дату / время ошибки, номер заказа:</b> {}\n\n'
-                  '<b>Комментарии к ошибке </b>'.format(context.user_data[WHICH_POST], context.user_data[WHAT_ERROR],
-                                                 context.user_data[WHAT_LOCATION], context.user_data[DATE_ERROR])),
-            parse_mode=ParseMode.HTML
-        )
-        return DETAIL_COMMENT
-
-
-def error_check(update, context):
-    context.user_data[DETAIL_COMMENT] = update.message.text
-    if context.user_data[WHAT_ERROR] in PHOTO_ERROR_TYPE and context.user_data[PHOTO_FILE_ID] is None:
-    # if context.user_data[WHAT_ERROR] == 'Качество заготовок' and context.user_data[PHOTO_FILE_ID] is None:
-        update.effective_message.reply_text(
-            text='📷 Фото прикрепим?',
-            parse_mode=ParseMode.HTML,
-            reply_markup=keyboard_yes_no()
-            )
-        return ADD_PHOTO
-
-    else:
-        update.effective_message.reply_text(
-            text='Спасибо! Все верно?\n\n<b>Должность:</b> {}\n<b>Ошибка:</b> {}\n<b>Точка:</b> {}\n<b>Дата/время:</b> {}\n<b>Комментарий:</b> {}'.format(
-                context.user_data[WHICH_POST],
-                context.user_data[WHAT_ERROR],
-                context.user_data[WHAT_LOCATION],
-                context.user_data[DATE_ERROR],
-                context.user_data[DETAIL_COMMENT],
-            ),
-            parse_mode=ParseMode.HTML,
-            reply_markup=keyboard_yes_no()
-        )
-        return CHECK_MESSAGE_ERROR
-
-
-def error_request_photo(update, context):
-    query = update.callback_query
-    data = query.data
-    if data == "Yes":
-        query.edit_message_text(
-            text='Можно прямо в бот 📸',
-        )
-        return GET_PHOTO
-    else:  # без фото
-        query.edit_message_text(
-            text='Нет, так нет! \nПроверь, что всё верно 👇\n\n<b>Должность:</b> {}\n<b>Ошибка:</b> {}\n<b>Точка:</b> {}\n<b>Дата/время:</b> {}\n<b>Комментарий:</b> {}'.format(
-                context.user_data[WHICH_POST],
-                context.user_data[WHAT_ERROR],
-                context.user_data[WHAT_LOCATION],
-                context.user_data[DATE_ERROR],
-                context.user_data[DETAIL_COMMENT],
-            ),
-            parse_mode=ParseMode.HTML,
-            reply_markup=keyboard_yes_no()
-        )
-        return CHECK_MESSAGE_ERROR
-
-
-def error_receive_photo(update, context):
-    context.user_data[PHOTO_FILE_ID] = update.message.photo[-1].file_id
-
-    update.effective_message.reply_text(
-        text='Спасибо! Все верно?\n\n<b>Должность:</b> {}\n<b>Ошибка:</b> {}\n<b>Точка:</b> {}\n<b>Дата/время:</b> {}\n<b>Комментарий:</b> {}'.format(
-            context.user_data[WHICH_POST],
-            context.user_data[WHAT_ERROR],
-            context.user_data[WHAT_LOCATION],
-            context.user_data[DATE_ERROR],
-            context.user_data[DETAIL_COMMENT],
+    await query.message.edit_text(
+        text=(
+            f"<b>Ошиблись:  </b>{data['which_post']}\n"
+            f"<b>Тип ошибки:  </b>{data['what_error']}\n"
+            f"<b>Точка:  </b>{data['what_location']}\n\n"
+            "Укажите дату / время ошибки, номер заказа: "
         ),
         parse_mode=ParseMode.HTML,
-        reply_markup=keyboard_yes_no()
     )
-    return CHECK_MESSAGE_ERROR
+    await state.set_state(ErrorState.date_error)
 
 
-def error_finish(update, context):
-    data = update.callback_query.data
-    check_message = data
-    context.user_data[CHECK_MESSAGE_ERROR] = check_message
+@router.message(ErrorState.date_error)
+async def error_comment(message: Message, state: FSMContext) -> None:
+    """Ask for detailed error description."""
 
-    if data == "Yes":
+    if message.text == BUTTON_ERROR_CANCEL:
+        await error_cancel(message, state)
+        return
+
+    await state.update_data(date_error=message.text)
+    data = await state.get_data()
+
+    await message.answer(
+        text=(
+            f"<b>Ошиблись:</b> {data['which_post']}\n"
+            f"<b>Тип ошибки:</b> {data['what_error']}\n"
+            f"<b>Точка:</b> {data['what_location']}\n"
+            f"<b>Дату / время ошибки, номер заказа:</b> {data['date_error']}\n\n"
+            "<b>Комментарии к ошибке </b>"
+        ),
+        parse_mode=ParseMode.HTML,
+    )
+    await state.set_state(ErrorState.detail_comment)
+
+
+@router.message(ErrorState.detail_comment)
+async def error_check(message: Message, state: FSMContext) -> None:
+    """Confirm collected data or ask for photo."""
+
+    await state.update_data(detail_comment=message.text)
+    data = await state.get_data()
+
+    if data["what_error"] in PHOTO_ERROR_TYPE and not data.get("photo_file_id"):
+        await message.answer(
+            text="📷 Фото прикрепим?",
+            parse_mode=ParseMode.HTML,
+            reply_markup=keyboard_yes_no(),
+        )
+        await state.set_state(ErrorState.add_photo)
+        return
+
+    await message.answer(
+        text=(
+            "Спасибо! Все верно?\n\n"
+            f"<b>Должность:</b> {data['which_post']}\n"
+            f"<b>Ошибка:</b> {data['what_error']}\n"
+            f"<b>Точка:</b> {data['what_location']}\n"
+            f"<b>Дата/время:</b> {data['date_error']}\n"
+            f"<b>Комментарий:</b> {data['detail_comment']}"
+        ),
+        parse_mode=ParseMode.HTML,
+        reply_markup=keyboard_yes_no(),
+    )
+    await state.set_state(ErrorState.confirm)
+
+
+@router.callback_query(ErrorState.add_photo)
+async def error_request_photo(query: CallbackQuery, state: FSMContext) -> None:
+    """Ask user to send a photo."""
+
+    if query.data == "Yes":
+        await query.message.edit_text(text="Можно прямо в бот 📸")
+        await state.set_state(ErrorState.get_photo)
+        return
+
+    data = await state.get_data()
+    await query.message.edit_text(
+        text=(
+            "Нет, так нет! \nПроверь, что всё верно 👇\n\n"
+            f"<b>Должность:</b> {data['which_post']}\n"
+            f"<b>Ошибка:</b> {data['what_error']}\n"
+            f"<b>Точка:</b> {data['what_location']}\n"
+            f"<b>Дата/время:</b> {data['date_error']}\n"
+            f"<b>Комментарий:</b> {data['detail_comment']}"
+        ),
+        parse_mode=ParseMode.HTML,
+        reply_markup=keyboard_yes_no(),
+    )
+    await state.set_state(ErrorState.confirm)
+
+
+@router.message(ErrorState.get_photo)
+async def error_receive_photo(message: Message, state: FSMContext) -> None:
+    """Receive photo from user."""
+
+    if not message.photo:
+        await message.answer("😓 это не фото, а надо фото. Ещё разок")
+        return
+
+    await state.update_data(photo_file_id=message.photo[-1].file_id)
+    data = await state.get_data()
+
+    await message.answer(
+        text=(
+            "Спасибо! Все верно?\n\n"
+            f"<b>Должность:</b> {data['which_post']}\n"
+            f"<b>Ошибка:</b> {data['what_error']}\n"
+            f"<b>Точка:</b> {data['what_location']}\n"
+            f"<b>Дата/время:</b> {data['date_error']}\n"
+            f"<b>Комментарий:</b> {data['detail_comment']}"
+        ),
+        parse_mode=ParseMode.HTML,
+        reply_markup=keyboard_yes_no(),
+    )
+    await state.set_state(ErrorState.confirm)
+
+
+@router.callback_query(ErrorState.confirm)
+async def error_finish(query: CallbackQuery, state: FSMContext) -> None:
+    """Write data to sheet and notify."""
+
+    data = await state.get_data()
+    if query.data == "Yes":
         try:
-            insert_entry_errors_gs(context.user_data[ID_USER_CHAT_ERROR],
-                                   context.user_data[WHAT_LOCATION],
-                                   context.user_data[DATE_ERROR],
-                                   context.user_data[WHAT_ERROR],
-                                   context.user_data[DETAIL_COMMENT],
-                                   context.user_data[WHICH_POST])
-            update.effective_message.reply_text(
-                text='Спасибо!',
-                reply_markup=keyboard_start(context.user_data[ID_USER_CHAT_ERROR], context)
+            insert_entry_errors_gs(
+                data["id_user_chat"],
+                data["what_location"],
+                data["date_error"],
+                data["what_error"],
+                data["detail_comment"],
+                data["which_post"],
             )
-            text = ('Ошибка:'
-                    '\n\nДолжность: {}'
-                    '\n От: {}'
-                    '\n Точка: {}'
-                    '\n Тип ошибки: {}'
-                    '\n Дата ошибки: {}'
-                    '\n Комментарий: {}'
-                    .format(context.user_data[WHICH_POST],
-                            context.user_data[USER_NAME_ERROR],
-                            context.user_data[WHAT_LOCATION],
-                            context.user_data[DATE_ERROR],
-                            context.user_data[WHAT_ERROR],
-                            context.user_data[DETAIL_COMMENT],
-                            )
-                    )
+            await query.message.answer(
+                text="Спасибо!",
+                reply_markup=await keyboard_start(data["id_user_chat"], state),
+            )
+            text = (
+                "Ошибка:"\
+                f"\n\nДолжность: {data['which_post']}"\
+                f"\n От: {data['user_name']}"\
+                f"\n Точка: {data['what_location']}"\
+                f"\n Тип ошибки: {data['what_error']}"\
+                f"\n Дата ошибки: {data['date_error']}"\
+                f"\n Комментарий: {data['detail_comment']}"
+            )
             try:
-                if context.user_data[PHOTO_FILE_ID]:
-                    context.bot.send_photo(
-                        chat_id=context.user_data[CHAT_ID_NOT1],
+                if data.get("photo_file_id"):
+                    await query.bot.send_photo(
+                        chat_id=data["chat_id_not1"],
                         caption=text,
-                        photo=context.user_data[PHOTO_FILE_ID]
+                        photo=data["photo_file_id"],
                     )
                 else:
-                    context.bot.send_message(
-                        chat_id=context.user_data[CHAT_ID_NOT1],
+                    await query.bot.send_message(
+                        chat_id=data["chat_id_not1"],
                         text=text,
                         reply_markup=keyboard_accept_read(),
                     )
-
-                    #  -1001225063049 BM - Кассиры
-
-
-
-
-            except Exception as e:
-                logging.error('insert data to table {} - ошибка {}'.format(context.user_data[WHICH_POST], str(e)))
-                context.bot.sendMessage(
-                    chat_id=ERROR_ADMIN_ID,
-                    text='ошибка бота ошибок: некорректный ID для отправки сообщений'
+            except Exception as exc:  # pragma: no cover - network
+                logging.error(
+                    "send notify error %s for %s", exc, data["which_post"]
                 )
-        except Exception as e:
-            logging.error('insert data to table {} - ошибка {}'.format(context.user_data[WHICH_POST], str(e)))
-
-            update.effective_message.reply_text(
-                text='Возникла ошибка! Сообщите о ней',
-                reply_markup=keyboard_start(context.user_data[ID_USER_CHAT_ERROR], context)
+                await query.bot.send_message(
+                    chat_id=ERROR_ADMIN_ID,
+                    text="ошибка бота ошибок: некорректный ID для отправки сообщений",
+                )
+        except Exception as exc:  # pragma: no cover - network
+            logging.error(
+                "insert data to table %s - ошибка %s", data["which_post"], exc
             )
-            context.bot.sendMessage(
+            await query.message.answer(
+                text="Возникла ошибка! Сообщите о ней",
+                reply_markup=await keyboard_start(data["id_user_chat"], state),
+            )
+            await query.bot.send_message(
                 chat_id=ERROR_ADMIN_ID,
-                text='Ошибка при внесении замечания {} - {}'.format(context.user_data[WHICH_POST], str(e))
+                text=f"Ошибка при внесении замечания {data['which_post']} - {exc}",
             )
-    if data == "No":
-        update.effective_message.reply_text(
-            text='Сообщение удалено',
-            reply_markup=keyboard_start(context.user_data[ID_USER_CHAT_ERROR], context)
+    else:
+        await query.message.answer(
+            text="Сообщение удалено",
+            reply_markup=await keyboard_start(data["id_user_chat"], state),
         )
-    return ConversationHandler.END
+    await state.clear()
 
 
-def error_cancel(update, context):
-    """ Отменить весь процесс диалога. Данные будут утеряны
-    """
-    context.bot.delete_message(chat_id=context.user_data[ID_USER_CHAT_ERROR], message_id=context.user_data[ID_MESSAGE_TO_DELETE])
-    update.message.reply_text(
-        text='Внесение ошибки прервано, вернулись в стартовое меню:',
-        reply_markup=keyboard_start(context.user_data[ID_USER_CHAT_ERROR], context)
+async def error_cancel(
+    message: Message | CallbackQuery, state: FSMContext
+) -> None:
+    """Cancel error conversation."""
+
+    data = await state.get_data()
+    try:
+        await message.bot.delete_message(
+            chat_id=data.get("id_user_chat"),
+            message_id=data.get("id_message_to_delete"),
+        )
+    except Exception:
+        pass
+
+    send: Message
+    if isinstance(message, CallbackQuery):
+        send = message.message
+        await message.answer()
+    else:
+        send = message
+
+    await send.answer(
+        text="Внесение ошибки прервано, вернулись в стартовое меню:",
+        reply_markup=await keyboard_start(data.get("id_user_chat"), state),
     )
-    return ConversationHandler.END
+    await state.clear()
 
 
-def timeout_callback_error(update, context):
-    query = update.callback_query
-    # context.bot.delete_message(chat_id=context.user_data[ID_USER_CHAT_ERROR], message_id=context.user_data[ID_MESSAGE_TO_DELETE])
-    query.edit_message_text(
-        text='Прервали внесение 📯 ошибки, не было активностей',
+@router.callback_query(ErrorState, state="*")
+async def timeout_callback_error(query: CallbackQuery, state: FSMContext) -> None:
+    """Handle timeout for callback events."""
+
+    await query.message.edit_text(
+        text="Прервали внесение 📯 ошибки, не было активностей",
     )
-    update.effective_message.reply_text(
-        text='Вернулись в стартовое меню',
-        reply_markup=keyboard_start(context.user_data[ID_USER_CHAT_ERROR], context),
+    data = await state.get_data()
+    await query.message.answer(
+        text="Вернулись в стартовое меню",
+        reply_markup=await keyboard_start(data.get("id_user_chat"), state),
     )
+    await state.clear()
 
 
-def timeout_message_error(update, context):
-    # context.bot.delete_message(chat_id=context.user_data[ID_USER_CHAT_ERROR], message_id=context.user_data[ID_MESSAGE_TO_DELETE])
-    update.message.reply_text(
-        text='Прервали внесение 📯 ошибки, не было активностей',
-        reply_markup=keyboard_start(context.user_data[ID_USER_CHAT_ERROR], context),
+@router.message(ErrorState, state="*")
+async def timeout_message_error(message: Message, state: FSMContext) -> None:
+    """Handle timeout for message events."""
+
+    data = await state.get_data()
+    await message.answer(
+        text="Прервали внесение 📯 ошибки, не было активностей",
+        reply_markup=await keyboard_start(data.get("id_user_chat"), state),
     )
+    await state.clear()
 
 
-def error_input(update, context):
-    update.message.reply_text(
-        text='ввыберите из вариантов в клавиатуре',
-    )
-    return WHAT_LOCATION
+def conversation_errors() -> Router:
+    """Return router with error handlers."""
 
-
-def wrong_input_photo(update, context):
-    update.message.reply_text(
-        text='😓 это не фото, а надо фото. Ещё разок',
-    )
-    return GET_PHOTO
-
-
-def add_observer_error(dispatcher):
-    dispatcher.add_handler(ConversationHandler(
-        entry_points=[MessageHandler(Filters.regex(BUTTON_ERROR_TITLE), error_start, pass_user_data=True)],
-
-        states={
-            WHICH_POST: [CallbackQueryHandler(error_type, pass_user_data=True)],
-            WHAT_ERROR: [CallbackQueryHandler(error_location, pass_user_data=True),
-                         MessageHandler(Filters.regex(BUTTON_ERROR_CANCEL), error_cancel, pass_user_data=True)],
-
-            WHAT_LOCATION: [CallbackQueryHandler(error_date_time, pass_user_data=True),
-                            MessageHandler(Filters.regex(BUTTON_ERROR_CANCEL), error_cancel, pass_user_data=True),
-                            MessageHandler(Filters.text, error_input, pass_user_data=True)],
-
-            DATE_ERROR: [MessageHandler(Filters.text, error_comment, pass_user_data=True),
-                         MessageHandler(Filters.regex(BUTTON_ERROR_CANCEL), error_cancel, pass_user_data=True)],
-
-            DETAIL_COMMENT: [MessageHandler(Filters.regex(BUTTON_ERROR_CANCEL), error_cancel, pass_user_data=True),
-                             MessageHandler(Filters.text, error_check, pass_user_data=True)],
-
-            ADD_PHOTO: [CallbackQueryHandler(error_request_photo, pass_user_data=True),
-                        MessageHandler(Filters.text, error_input, pass_user_data=True)],
-
-            GET_PHOTO: [MessageHandler(Filters.regex(BUTTON_ERROR_CANCEL), error_cancel, pass_user_data=True),
-                        MessageHandler(~Filters.photo, wrong_input_photo,  pass_user_data=True),
-                        MessageHandler(Filters.photo, error_receive_photo,  pass_user_data=True)],
-
-            CHECK_MESSAGE_ERROR: [CallbackQueryHandler(error_finish, pass_user_data=True)],
-
-            ConversationHandler.TIMEOUT:
-                [CallbackQueryHandler(timeout_callback_error, pass_job_queue=True, pass_update_queue=True),
-                 MessageHandler(Filters.text | Filters.command, timeout_message_error)],
-        },
-        # fallbacks=[CommandHandler('cancel_error', error_cancel)]
-        fallbacks=[MessageHandler(Filters.regex(BUTTON_ERROR_CANCEL), error_cancel, pass_user_data=True)],
-        conversation_timeout=CHAT_TIMEOUT
-    ))
-
-
+    return router
