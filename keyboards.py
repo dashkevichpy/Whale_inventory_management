@@ -104,7 +104,7 @@ def keyboard_yes_no() -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="Нет", callback_data="No"),
         ]
     ]
-    return InlineKeyboardMarkup(keyboard)
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
 def keyboard_from_column(sheet_name, col_number: int, start: int, finish: int, col_amount: int):
@@ -126,7 +126,7 @@ def keyboard_from_column(sheet_name, col_number: int, start: int, finish: int, c
         )
         count += 1
 
-    return InlineKeyboardMarkup(keyboard)
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
 # подтверждение получения клавиатура
@@ -134,7 +134,7 @@ def keyboard_accept_read() -> InlineKeyboardMarkup:
     """Return keyboard with single confirm button."""
 
     keyboard = [[InlineKeyboardButton(text="Confirm", callback_data="accept")]]
-    return InlineKeyboardMarkup(keyboard)
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 # dict_test = [{'id_department': 2, 'department_name': 'Бургермейкер'}, {'id_department': 1, 'department_name': 'Фабрика'}]
 
@@ -150,7 +150,7 @@ def keyboard_from_dict(
         )
         for counter, x in
      enumerate(list_of_dict)]
-    return InlineKeyboardMarkup(keyboard)
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
 def keyboard_from_list(list_values, col_amount: int):
@@ -171,7 +171,7 @@ def keyboard_from_list(list_values, col_amount: int):
         )
         count += 1
 
-    return InlineKeyboardMarkup(keyboard)
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
 
@@ -190,7 +190,7 @@ def keyboard_from_enum(enum_obj, col_amount: int):
         )
         for counter, e in enumerate(enum_obj)
     ]
-    return InlineKeyboardMarkup(keyboard)
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
 # ---------------------ERROR-----------------------------------
@@ -217,7 +217,7 @@ def keyboard_position() -> InlineKeyboardMarkup:
         )
         counter_keyboard += 1
 
-    return InlineKeyboardMarkup(keyboard)
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
 # ---------------------BREAKAGE-----------------------------------
@@ -241,7 +241,7 @@ def keyboard_critical() -> InlineKeyboardMarkup:
             InlineKeyboardButton(text="⏳ Поломка некритична", callback_data="Некритическая")
         ],
     ]
-    return InlineKeyboardMarkup(keyboard)
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
 CALLBCK_WRONG_BT_WHALE_DELV_WAIT = 'Nope'
@@ -306,7 +306,7 @@ def keyboard_delivery_wait(now_wait, delivery_store, wait_minutes) -> InlineKeyb
                     InlineKeyboardButton(text=minute, callback_data=f"{delivery_store[idx]} {minute}")
                 )
 
-    return InlineKeyboardMarkup(keyboard)
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
 def keyboard_cancel_delivery_wait():
@@ -359,4 +359,4 @@ def keyboard_remind(id_notification: int) -> InlineKeyboardMarkup:
     keyboard = [
         [InlineKeyboardButton(text='Сделано|прочтено', callback_data=callback)]
     ]
-    return InlineKeyboardMarkup(keyboard)
+    return InlineKeyboardMarkup(inline_keyboard=keyboard)
