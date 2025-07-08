@@ -1,6 +1,5 @@
 from typing import Union
 from class_StartKeyboard import Employee
-from decorators import timing
 from postgres import query_postgre_factory, query_postgre_one_value, query_postgre_list, query_postgre
 
 

@@ -19,7 +19,6 @@ import os
 load_dotenv()
 LINK_GS_JSON = os.getenv('LINK_GS_JSON')
 TIME_ZONE = os.getenv('TIME_ZONE')
-from decorators import leak_find
 from typing import Union
 
 from postgres import append_df_pgre
@@ -482,7 +481,6 @@ def update_acceptance_sheets():
 
 
 # update_acceptance_sheets()
-# @leak_find
 def update_write_off_sheets():
     write_off_sheets = AllSheetWriteOff()
     write_off_sheets.update()

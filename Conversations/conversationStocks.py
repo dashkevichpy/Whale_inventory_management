@@ -23,7 +23,7 @@ ERROR_ADMIN_ID = os.getenv('ERROR_ADMIN_ID')
 TIME_ZONE = os.getenv('TIME_ZONE')
 STOCK_CLOSING_START = os.getenv('STOCK_CLOSING_START')
 STOCK_CLOSING_END = os.getenv('STOCK_CLOSING_END')
-from decorators import leak_find
+
 
 from keyboards import BUTTON_STOCKS, BUTTON_CANCEL_CONVERSATION, keyboard_cancel_conversation, \
     keyboard_from_list

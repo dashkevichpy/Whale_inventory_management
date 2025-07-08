@@ -1,42 +1,19 @@
-import tracemalloc
+"""Reusable decorators for aiogram handlers."""
 
-from telegram.ext import ConversationHandler
-from time import time
+from functools import wraps
+from typing import Any, Awaitable, Callable
 
-def check_group(func):
-    def wrapper(update, context):
-        if update.message.chat.type == 'group' or update.message.chat.type == 'supergroup':
-            update.effective_message.reply_text(
-                text='Команды в группе не принимаются',
-                reply_markup=None
-            )
-            return ConversationHandler.END
-        else:
-            return func(update, context)
+from aiogram.types import Message
+
+
+def check_group(handler: Callable[..., Awaitable[Any]]) -> Callable[..., Awaitable[Any]]:
+    """Prevent handler execution in group chats."""
+
+    @wraps(handler)
+    async def wrapper(message: Message, *args: Any, **kwargs: Any) -> Any:
+        if message.chat.type in {"group", "supergroup"}:
+            await message.answer("Команды в группе не принимаются")
+            return None
+        return await handler(message, *args, **kwargs)
+
     return wrapper
-
-
-def timing(f):
-    def wrap(*args, **kw):
-        ts = time()
-        result = f(*args, **kw)
-        te = time()
-        print('-- func:%r args:[%r, %r] took: %2.4f sec' % (f.__name__, args, kw, te-ts))
-        return result
-    return wrap
-
-
-def leak_find(f):
-    # @wraps(f)
-    def wrap(*args, **kw):
-        tracemalloc.start()
-
-        result = f(*args, **kw)
-
-        snapshot = tracemalloc.take_snapshot()
-        top_stats = snapshot.statistics('lineno')
-        print('LEAKS -- func:%r args:[%r, %r]' % (f.__name__, args, kw))
-        for stat in top_stats[:5]:
-            print(stat)
-        return result
-    return wrap
