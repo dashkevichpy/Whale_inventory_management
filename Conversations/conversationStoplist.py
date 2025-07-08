@@ -1,7 +1,7 @@
 """Conversation flow for managing stop list."""
 
 from __future__ import annotations
-
+import logging
 import os
 from enum import Enum
 from typing import Union, TYPE_CHECKING
@@ -82,7 +82,7 @@ def keyboard_stop_actions(has_remove: bool) -> InlineKeyboardMarkup:
 
 async def _to_dispatch(message: Message, state: FSMContext, info: str | None = None) -> None:
     """Show dispatch menu with optional info message."""
-
+    logging.debug("_to_dispatch info=%s", info)
     data = await state.get_data()
     employee: Employee = data["employee"]
     stop_list = pg_get_stop_list(employee.id_store)
@@ -97,6 +97,8 @@ async def _cancel_reply(sender: Union[Message, CallbackQuery], state: FSMContext
     """Return to start menu and clear state."""
 
     from class_StartKeyboard import keyboard_start
+
+    logging.debug("_cancel_reply type=%s", type(sender))
 
     send: Message
     if isinstance(sender, CallbackQuery):
@@ -116,7 +118,7 @@ async def _cancel_reply(sender: Union[Message, CallbackQuery], state: FSMContext
 @check_group
 async def stoplist_start(message: Message, state: FSMContext) -> None:
     """Entry point for stop list actions."""
-
+    logging.debug("stoplist_start from %s", message.from_user.id)
     from class_StartKeyboard import keyboard_start
 
     await state.update_data(id_user_chat=message.chat.id)
@@ -142,7 +144,7 @@ async def stoplist_start(message: Message, state: FSMContext) -> None:
 @router.callback_query(StopListState.dispatch, F.data == StopAction.ADD.callback)
 async def stoplist_add(query: CallbackQuery, state: FSMContext) -> None:
     """Show available items to add to stop list."""
-
+    logging.debug("stoplist_add query=%s", query.data)
     data = await state.get_data()
     employee: Employee = data["employee"]
     items = pg_get_nomenclature_to_stop_list(employee.id_store)
@@ -161,7 +163,7 @@ async def stoplist_add(query: CallbackQuery, state: FSMContext) -> None:
 @router.callback_query(StopListState.dispatch, F.data == StopAction.REMOVE.callback)
 async def stoplist_remove(query: CallbackQuery, state: FSMContext) -> None:
     """Show active stop list for removal."""
-
+    logging.debug("stoplist_remove query=%s", query.data)
     data = await state.get_data()
     employee: Employee = data["employee"]
     items = pg_get_stop_list(employee.id_store)
@@ -180,7 +182,7 @@ async def stoplist_remove(query: CallbackQuery, state: FSMContext) -> None:
 @router.callback_query(StopListState.add)
 async def stoplist_add_select(query: CallbackQuery, state: FSMContext) -> None:
     """Add selected item to stop list."""
-
+    logging.debug("stoplist_add_select %s", query.data)
     data = await state.get_data()
     employee: Employee = data["employee"]
     nomenclature = query.data
@@ -195,7 +197,7 @@ async def stoplist_add_select(query: CallbackQuery, state: FSMContext) -> None:
 @router.callback_query(StopListState.remove)
 async def stoplist_remove_select(query: CallbackQuery, state: FSMContext) -> None:
     """Remove selected item from stop list."""
-
+    logging.debug("stoplist_remove_select %s", query.data)
     data = await state.get_data()
     employee: Employee = data["employee"]
     nomenclature = query.data
@@ -210,14 +212,14 @@ async def stoplist_remove_select(query: CallbackQuery, state: FSMContext) -> Non
 @router.message(F.text == BUTTON_CANCEL_CONVERSATION)
 async def stoplist_cancel_message(message: Message, state: FSMContext) -> None:
     """Cancel stop list dialog via message."""
-
+    logging.debug("stoplist_cancel_message from %s", message.from_user.id)
     await _cancel_reply(message, state)
 
 
 @router.callback_query(F.data == BUTTON_CANCEL_CONVERSATION)
 async def stoplist_cancel_callback(query: CallbackQuery, state: FSMContext) -> None:
     """Cancel stop list dialog via callback."""
-
+    logging.debug("stoplist_cancel_callback %s", query.data)
     await _cancel_reply(query, state)
 
 

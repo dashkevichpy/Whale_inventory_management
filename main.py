@@ -20,6 +20,7 @@ from Conversations.conversationChooseWhale import (
     reset_store_employee,
 )
 from Conversations.conversationRegister import conversation_register
+from Conversations.conversationStoplist import conversation_stoplist
 
 load_dotenv()
 TOKEN = os.getenv("TG_TOKEN")
@@ -56,6 +57,7 @@ async def main() -> None:
     dp.include_router(router)
     dp.include_router(conversation_choose_whale())
     dp.include_router(conversation_register())
+    dp.include_router(conversation_stoplist())
 
     bot = Bot(
         TOKEN,
@@ -67,6 +69,7 @@ async def main() -> None:
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
+    logging.getLogger().setLevel(logging.DEBUG)
     try:
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
