@@ -1,9 +1,0 @@
-2025-07-08 16:36:10,098 - aiogram.dispatcher - INFO - Start polling
-2025-07-08 16:36:10,691 - aiogram.dispatcher - INFO - Run polling for bot @bImas_tas_bot id=7964566377 - 'bImas_tas_bot'
-2025-07-08 16:36:50,170 - root - INFO - TEST_MODE: skip query execution
-2025-07-08 16:36:50,684 - aiogram.event - INFO - Update id=996116819 is handled. Duration 1163 ms by bot id=7964566377
-2025-07-08 16:36:52,474 - aiogram.event - INFO - Update id=996116820 is not handled. Duration 1 ms by bot id=7964566377
-2025-07-08 16:37:24,731 - aiogram.event - INFO - Update id=996116821 is not handled. Duration 1 ms by bot id=7964566377
-2025-07-08 17:01:09,822 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [Errno 54] Connection reset by peer
-2025-07-08 17:01:09,917 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7964566377)
-2025-07-08 17:01:21,610 - aiogram.dispatcher - INFO - Connection established (tryings = 1, bot id = 7964566377)

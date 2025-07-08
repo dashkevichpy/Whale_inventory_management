@@ -122,7 +122,7 @@ async def register_cancel(
     await state.clear()
 
 
-@router.message(Text(BUTTON_CANCEL_CONVERSATION))
+@router.message(F.text == BUTTON_CANCEL_CONVERSATION)
 async def register_cancel_message(message: Message, state: FSMContext) -> None:
     """Cancel registration via text button."""
 
