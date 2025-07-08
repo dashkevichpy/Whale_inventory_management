@@ -1,7 +1,9 @@
-from telegram import KeyboardButton
-from telegram import ReplyKeyboardMarkup
-from telegram import InlineKeyboardButton
-from telegram import InlineKeyboardMarkup
+from aiogram.types import (
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    KeyboardButton,
+    ReplyKeyboardMarkup,
+)
 import numpy as np
 
 
@@ -10,7 +12,6 @@ from gSheet import get_column_values, get_error_postions_from_gs
 
 BUTTON_BREAK_TITLE = "🛠Поломка"
 BUTTON_ERROR_TITLE = "📯Ошибка"
-# BUTTON_STOP_TITLE = "🛑STOP"
 BUTTON_WAIT_TITLE = "⏳Ожидание"
 BUTTON_AVERAGE_CHECK = '💸 Средний чек'
 BUTTON_STOCKS = '🖋 Запасы'
@@ -74,146 +75,30 @@ KEYBOARD_STOP_DEL_CONT_TITLES = {
 
 
 def keyboard_cancel_wait():
-    """
-    cancel choose whale
-    :return:
-    """
+    """Return keyboard with a cancel button for waiting."""
+
     keyboard = [[KeyboardButton(BUTTON_WAIT_CANCEL)]]
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
-    # return ForceReply(keyboard=keyboard, resize_keyboard=True)
 
 # ------------------------choose whale--------------------------------
 
 def keyboard_cancel_choose_whale():
-    """
-    cancel choose whale
-    :return:
-    """
+    """Return keyboard with button to cancel whale choosing."""
+
     keyboard = [[KeyboardButton(BUTTON_CHOOSE_WHALE_CANCEL)]]
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
-    # return ForceReply(keyboard=keyboard, resize_keyboard=True)
 
-# ------------------------STOP LIST--------------------------------
-# ------------------------STOP LIST--------------------------------
-# def keyboard_add_cont():
-#     keyboard = [
-#         [
-#             InlineKeyboardButton(KEYBOARD_STOP_ADD_CONT_TITLES[KEYBOARD_STOP_ADD_CONT_CALLBACK[0]],
-#                                  callback_data=KEYBOARD_STOP_ADD_CONT_CALLBACK[0])
-#             # InlineKeyboardButton(KEYBOARD_STOP_ADD_CONT_TITLES[KEYBOARD_STOP_ADD_CONT_CALLBACK[1]],
-#             #                      callback_data=KEYBOARD_STOP_ADD_CONT_CALLBACK[1])
-#         ],
-#         [
-#             InlineKeyboardButton(KEYBOARD_STOP_ADD_CONT_TITLES[KEYBOARD_STOP_ADD_CONT_CALLBACK[1]],
-#                                  callback_data=KEYBOARD_STOP_ADD_CONT_CALLBACK[1])
-#         ],
-#     ]
-#     return InlineKeyboardMarkup(keyboard)
-#
-#
-# def keyboard_del_cont():
-#     keyboard = [
-#         [
-#             InlineKeyboardButton(KEYBOARD_STOP_DEL_CONT_TITLES[KEYBOARD_STOP_DEL_CONT_CALLBACK[0]],
-#                                  callback_data=KEYBOARD_STOP_DEL_CONT_CALLBACK[0]),
-#             InlineKeyboardButton(KEYBOARD_STOP_DEL_CONT_TITLES[KEYBOARD_STOP_DEL_CONT_CALLBACK[1]],
-#                                  callback_data=KEYBOARD_STOP_DEL_CONT_CALLBACK[1])
-#         ],
-#     ]
-#     return InlineKeyboardMarkup(keyboard)
-#
-#
-# def keyboard_stoplist_actions():
-#     keyboard = [
-#         [
-#             InlineKeyboardButton(KEYBOARD_STOP_ACTIONS_TITLES[KEYBOARD_STOP_ACTIONS_CALLBACK[0]],
-#                                  callback_data=KEYBOARD_STOP_ACTIONS_CALLBACK[0])
-#         ],
-#         [
-#             InlineKeyboardButton(KEYBOARD_STOP_ACTIONS_TITLES[KEYBOARD_STOP_ACTIONS_CALLBACK[1]],
-#                                  callback_data=KEYBOARD_STOP_ACTIONS_CALLBACK[1])
-#         ],
-#         [
-#             InlineKeyboardButton(KEYBOARD_STOP_ACTIONS_TITLES[KEYBOARD_STOP_ACTIONS_CALLBACK[2]],
-#                                  callback_data=KEYBOARD_STOP_ACTIONS_CALLBACK[2])
-#         ],
-#         # [
-#         #     InlineKeyboardButton(KEYBOARD_STOP_ACTIONS_TITLES[KEYBOARD_STOP_ACTIONS_CALLBACK[3]],
-#         #                          callback_data=KEYBOARD_STOP_ACTIONS_CALLBACK[3])
-#         # ],
-#     ]
-#     return InlineKeyboardMarkup(keyboard)
-#
-#
-# def keyboard_stoplist_amount():
-#     keyboard = [
-#         [
-#             InlineKeyboardButton(KEYBOARD_STOP_AMOUNT_TITLES[KEYBOARD_STOP_AMOUNT_CALLBACK[0]],
-#                                  callback_data=KEYBOARD_STOP_AMOUNT_CALLBACK[0]),
-#             InlineKeyboardButton(KEYBOARD_STOP_AMOUNT_TITLES[KEYBOARD_STOP_AMOUNT_CALLBACK[1]],
-#                                  callback_data=KEYBOARD_STOP_AMOUNT_CALLBACK[1]),
-#         ],
-#         [
-#             InlineKeyboardButton(KEYBOARD_STOP_AMOUNT_TITLES[KEYBOARD_STOP_AMOUNT_CALLBACK[2]],
-#                                  callback_data=KEYBOARD_STOP_AMOUNT_CALLBACK[2]),
-#             InlineKeyboardButton(KEYBOARD_STOP_AMOUNT_TITLES[KEYBOARD_STOP_AMOUNT_CALLBACK[3]],
-#                                  callback_data=KEYBOARD_STOP_AMOUNT_CALLBACK[3]),
-#         ],
-#         [
-#             InlineKeyboardButton(KEYBOARD_STOP_AMOUNT_TITLES[KEYBOARD_STOP_AMOUNT_CALLBACK[4]],
-#                                  callback_data=KEYBOARD_STOP_AMOUNT_CALLBACK[4]),
-#             InlineKeyboardButton(KEYBOARD_STOP_AMOUNT_TITLES[KEYBOARD_STOP_AMOUNT_CALLBACK[5]],
-#                                  callback_data=KEYBOARD_STOP_AMOUNT_CALLBACK[5]),
-#         ],
-#         [
-#             InlineKeyboardButton(KEYBOARD_STOP_AMOUNT_TITLES[KEYBOARD_STOP_AMOUNT_CALLBACK[6]],
-#                                  callback_data=KEYBOARD_STOP_AMOUNT_CALLBACK[6]),
-#             InlineKeyboardButton(KEYBOARD_STOP_AMOUNT_TITLES[KEYBOARD_STOP_AMOUNT_CALLBACK[7]],
-#                                  callback_data=KEYBOARD_STOP_AMOUNT_CALLBACK[7]),
-#         ],
-#     ]
-#     return InlineKeyboardMarkup(keyboard)
-#
-#
-# def keyboard_stoplist_now():
-#     pass
-#
-#
-# def keyboard_stoplist_provision(provisions_avaliable):
-#     provision_for_keyboard = np.array(provisions_avaliable[:, 1])
-#     keyboard = [[] for _ in range(len(provision_for_keyboard))]
-#     count = 0
-#     col_amount = 2
-#     for i in provision_for_keyboard:
-#         rt = int(count / col_amount)
-#         keyboard[int(rt)].append(InlineKeyboardButton(i, callback_data=i))
-#         count += 1
-#
-#     return InlineKeyboardMarkup(keyboard)
-#
-#
-# def keyboard_cancel_stoplist():
-#     """
-#     старотвая стационарная клавиатура
-#     :return:
-#     """
-#     keyboard = [[KeyboardButton(BUTTON_STOP_CANCEL)]]
-#     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
-#     # return ForceReply(keyboard=keyboard, resize_keyboard=True)
-#
-# # KeyboardButton(BUTTON_STOP_TITLE)
 
 
 
 # ---------------------OVERALL-----------------------------------
 
 # да/нет клавиатура
-def keyboard_yes_no():
+def keyboard_yes_no() -> InlineKeyboardMarkup:
+    """Return inline keyboard with Yes and No buttons."""
+
     keyboard = [
-        [
-            InlineKeyboardButton("Да", callback_data="Yes"),
-            InlineKeyboardButton("Нет", callback_data="No")
-        ],
+        [InlineKeyboardButton("Да", callback_data="Yes"), InlineKeyboardButton("Нет", callback_data="No")]
     ]
     return InlineKeyboardMarkup(keyboard)
 
@@ -239,25 +124,18 @@ def keyboard_from_column(sheet_name, col_number: int, start: int, finish: int, c
 
 
 # подтверждение получения клавиатура
-def keyboard_accept_read():
-    keyboard = [
-        [
-            InlineKeyboardButton("Confirm", callback_data="accept"),
-        ],
-    ]
+def keyboard_accept_read() -> InlineKeyboardMarkup:
+    """Return keyboard with single confirm button."""
+
+    keyboard = [[InlineKeyboardButton("Confirm", callback_data="accept")]]
     return InlineKeyboardMarkup(keyboard)
 
 # dict_test = [{'id_department': 2, 'department_name': 'Бургермейкер'}, {'id_department': 1, 'department_name': 'Фабрика'}]
 
-def keyboard_from_dict(list_of_dict: list, button_title: str, callback_title: str, col_amount: int):
-    '''
-
-    :param list_of_dict:  [{'id_department': 2, 'department_name': 'Бургермейкер'}, {'id_department': 1, 'department_name': 'Фабрика'}]
-    :param button_title:  'department_name'
-    :param callback:   'id_department'
-    :param col_amount:
-    :return:
-    '''
+def keyboard_from_dict(
+    list_of_dict: list, button_title: str, callback_title: str, col_amount: int
+) -> InlineKeyboardMarkup:
+    """Return keyboard built from dictionary list."""
 
     keyboard = [[] for _ in range(len(list_of_dict))]
     [keyboard[int(counter / col_amount)].append(InlineKeyboardButton(x[button_title], callback_data=x[callback_title])) for counter, x in
@@ -311,13 +189,16 @@ def keyboard_cancel_error():
 
 
 # должности
-def keyboard_position():
-    keyboard = [[], [], [], []]
-    counterKeyboard = 0
+def keyboard_position() -> InlineKeyboardMarkup:
+    """Return keyboard with positions from Google Sheet."""
 
+    keyboard = [[], [], [], []]
+    counter_keyboard = 0
     for post in get_error_postions_from_gs():
-        keyboard[int(counterKeyboard / 2)].append(InlineKeyboardButton(post, callback_data=post))
-        counterKeyboard += 1
+        keyboard[int(counter_keyboard / 2)].append(
+            InlineKeyboardButton(post, callback_data=post)
+        )
+        counter_keyboard += 1
 
     return InlineKeyboardMarkup(keyboard)
 
@@ -334,14 +215,12 @@ def keyboard_cancel_breakage():
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
 
 
-def keyboard_critical():
+def keyboard_critical() -> InlineKeyboardMarkup:
+    """Return keyboard to select breakage criticality."""
+
     keyboard = [
-        [
-            InlineKeyboardButton("Критична", callback_data="Критична"),
-        ],
-        [
-            InlineKeyboardButton("⏳ Поломка некритична", callback_data="Некритическая"),
-        ],
+        [InlineKeyboardButton("Критична", callback_data="Критична")],
+        [InlineKeyboardButton("⏳ Поломка некритична", callback_data="Некритическая")],
     ]
     return InlineKeyboardMarkup(keyboard)
 
@@ -352,39 +231,60 @@ OPEN_SESSION_DELIVERY_WAIT = 'OPEN_SESSION_DELIVERY_WAIT'
 MARKER_WAIT_DELIVERY_WAIT = '🔴'
 
 
-def keyboard_delivery_wait(now_wait, delivery_store, WAIT_MINUTES):
+def keyboard_delivery_wait(now_wait, delivery_store, wait_minutes) -> InlineKeyboardMarkup:
+    """Return keyboard for setting delivery waiting time."""
+
     sym_dev_st = '🟢 '
     now_wait = np.array(now_wait)
-    # print(now_wait.size)
-    # print(type(now_wait), '',now_wait)
-    # print(type(delivery_store), '',delivery_store )
-    keyboard = [[] for i in delivery_store]
-    if now_wait.size > 0:
-        for s in range(delivery_store.size):
-            ind_store = np.where(now_wait[:, 0] == delivery_store[s])[0]  # если в этой точке ожидание доставки
-            if ind_store.size > 0:
-                keyboard[s].append(InlineKeyboardButton(MARKER_WAIT_DELIVERY_WAIT + delivery_store[s], callback_data=MARKER_WAIT_DELIVERY_WAIT + " " + delivery_store[s]))
-                for t in range(len(WAIT_MINUTES)):
-                    ind_min = np.where(now_wait[ind_store, 1] == WAIT_MINUTES[t])[0]
-                    if ind_min.size > 0:
-                        keyboard[s].append(
-                            InlineKeyboardButton('❗' + WAIT_MINUTES[t], callback_data=CALLBCK_WRONG_BT_MIN_DELV_WAIT))
-                    else:
-                        keyboard[s].append(
-                            InlineKeyboardButton(WAIT_MINUTES[t], callback_data=OPEN_SESSION_DELIVERY_WAIT + " " + delivery_store[s] + " " + WAIT_MINUTES[t]))
-            else:
-                keyboard[s].append(InlineKeyboardButton(sym_dev_st + delivery_store[s], callback_data=CALLBCK_WRONG_BT_WHALE_DELV_WAIT))
-                for t in range(len(WAIT_MINUTES)):
-                    keyboard[s].append(
-                        InlineKeyboardButton(WAIT_MINUTES[t], callback_data=delivery_store[s] + " " + WAIT_MINUTES[t]))
-    else:
-        for s in range(delivery_store.size):
-            keyboard[s].append(InlineKeyboardButton(sym_dev_st + delivery_store[s], callback_data=CALLBCK_WRONG_BT_WHALE_DELV_WAIT))
-            for t in range(len(WAIT_MINUTES)):
-                keyboard[s].append(
-                    InlineKeyboardButton(WAIT_MINUTES[t], callback_data=delivery_store[s] + " " + WAIT_MINUTES[t]))
+    keyboard = [[] for _ in delivery_store]
 
-    # keyboard[-1].append(InlineKeyboardButton('всё внесено', callback_data='22'))
+    if now_wait.size > 0:
+        for idx in range(delivery_store.size):
+            ind_store = np.where(now_wait[:, 0] == delivery_store[idx])[0]
+            if ind_store.size > 0:
+                keyboard[idx].append(
+                    InlineKeyboardButton(
+                        MARKER_WAIT_DELIVERY_WAIT + delivery_store[idx],
+                        callback_data=f"{MARKER_WAIT_DELIVERY_WAIT} {delivery_store[idx]}",
+                    )
+                )
+                for minute in wait_minutes:
+                    ind_min = np.where(now_wait[ind_store, 1] == minute)[0]
+                    if ind_min.size > 0:
+                        keyboard[idx].append(
+                            InlineKeyboardButton(f"❗{minute}", callback_data=CALLBCK_WRONG_BT_MIN_DELV_WAIT)
+                        )
+                    else:
+                        keyboard[idx].append(
+                            InlineKeyboardButton(
+                                minute,
+                                callback_data=f"{OPEN_SESSION_DELIVERY_WAIT} {delivery_store[idx]} {minute}",
+                            )
+                        )
+            else:
+                keyboard[idx].append(
+                    InlineKeyboardButton(
+                        sym_dev_st + delivery_store[idx],
+                        callback_data=CALLBCK_WRONG_BT_WHALE_DELV_WAIT,
+                    )
+                )
+                for minute in wait_minutes:
+                    keyboard[idx].append(
+                        InlineKeyboardButton(minute, callback_data=f"{delivery_store[idx]} {minute}")
+                    )
+    else:
+        for idx in range(delivery_store.size):
+            keyboard[idx].append(
+                InlineKeyboardButton(
+                    sym_dev_st + delivery_store[idx],
+                    callback_data=CALLBCK_WRONG_BT_WHALE_DELV_WAIT,
+                )
+            )
+            for minute in wait_minutes:
+                keyboard[idx].append(
+                    InlineKeyboardButton(minute, callback_data=f"{delivery_store[idx]} {minute}")
+                )
+
     return InlineKeyboardMarkup(keyboard)
 
 
@@ -397,13 +297,11 @@ def keyboard_cancel_delivery_wait():
 
 
 def keyboard_stop_or_cancel_delivery_wait():
-    # [[KeyboardButton(BUTTON_BREAK_TITLE), KeyboardButton(BUTTON_ERROR_TITLE)],
-    #  [KeyboardButton(BUTTON_STOP_TITLE), KeyboardButton(BUTTON_WAIT_TITLE)]]
-
+    """Return keyboard to stop or cancel delivery waiting."""
 
     keyboard = [
         [KeyboardButton(BUTTON_DELIVERY_WAIT_CANCEL)],
-                [KeyboardButton(BUTTON_DELIVERY_STOP)]
+        [KeyboardButton(BUTTON_DELIVERY_STOP)],
     ]
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
 
@@ -416,7 +314,6 @@ def keyboard_cancel_transfer():
     """
     keyboard = [[KeyboardButton(BUTTON_TRANSFER_CANCEL)]]
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
-    # return ForceReply(keyboard=keyboard, resize_keyboard=True)
 
 
 # ---------------------STOCKS-----------------------------------
@@ -428,13 +325,16 @@ def keyboard_cancel_conversation() -> ReplyKeyboardMarkup:
     """
     keyboard = [[KeyboardButton(BUTTON_CANCEL_CONVERSATION)]]
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
-    # return ForceReply(keyboard=keyboard, resize_keyboard=True)
 
 
 # ---------------------NOTIFICATION-----------------------------------
 
 def keyboard_remind(id_notification: int) -> InlineKeyboardMarkup:
-    callback = str(id_notification) + NOTIFICATION_SEPARATOR_SYMBOL + BUTTON_NOTIFICATION_REMIND_CALLBACK
+    """Return keyboard for notification reminders."""
+
+    callback = (
+        str(id_notification) + NOTIFICATION_SEPARATOR_SYMBOL + BUTTON_NOTIFICATION_REMIND_CALLBACK
+    )
     keyboard = [
         [
             InlineKeyboardButton('Сделано|прочтено', callback_data=callback),
