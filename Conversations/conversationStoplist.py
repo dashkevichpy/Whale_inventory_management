@@ -11,6 +11,7 @@ from aiogram import F
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
+from aiogram.exceptions import TelegramBadRequest
 from dotenv import load_dotenv
 
 from decorators import check_group
@@ -80,8 +81,16 @@ def keyboard_stop_actions(has_remove: bool) -> InlineKeyboardMarkup:
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 
-async def _to_dispatch(message: Message, state: FSMContext, info: str | None = None) -> None:
-    """Show dispatch menu with optional info message."""
+async def _to_dispatch(
+    message: Message, state: FSMContext, info: str | None = None
+) -> None:
+    """Show dispatch menu with optional info message.
+
+    Telegram can raise ``TelegramBadRequest`` when trying to edit a message with
+    unchanged text or markup. This error is ignored to prevent crashing the
+    conversation flow.
+    """
+
     logging.debug("_to_dispatch info=%s", info)
     data = await state.get_data()
     employee: Employee = data["employee"]
@@ -89,7 +98,15 @@ async def _to_dispatch(message: Message, state: FSMContext, info: str | None = N
     text = "Выберите действие:"
     if info:
         text = f"{info}\n{text}"
-    await message.edit_text(text=text, reply_markup=keyboard_stop_actions(bool(stop_list)))
+
+    try:
+        await message.edit_text(
+            text=text, reply_markup=keyboard_stop_actions(bool(stop_list))
+        )
+    except TelegramBadRequest as err:
+        if "message is not modified" not in err.message:
+            raise
+
     await state.set_state(StopListState.dispatch)
 
 
