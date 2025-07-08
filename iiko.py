@@ -1,80 +1,91 @@
-import urlfetch
-import requests
-import json
+"""Functions to interact with the iiko API."""
 
-from dotenv import load_dotenv
 import os
+from typing import List, Optional
+
+import requests
+from dotenv import load_dotenv
 
 load_dotenv()
-IIKO_API_KEY = os.getenv('IIKO_API_KEY')
+IIKO_API_KEY = os.getenv("IIKO_API_KEY")
+BASE_URL = "https://burgerkit-co.iiko.it:443/resto/api"
+
+def login_iiko() -> str:
+    """Return authentication token for iiko API."""
+
+    url = f"{BASE_URL}/auth?login=kitapi&pass={IIKO_API_KEY}"
+    response = requests.get(url, timeout=10)
+    response.raise_for_status()
+    return response.text
 
 
-def login_iiko():
-    url_api = 'https://burgerkit-co.iiko.it:443/resto/api/auth?login=kitapi&pass=' + str(IIKO_API_KEY)
-    token = urlfetch.fetch(url_api).text
-    return token
+
+def logout_iiko(token: str) -> None:
+    """Invalidate authentication token."""
+
+    url = f"{BASE_URL}/logout?key={token}"
+    requests.get(url, timeout=10)
 
 
-
-def logout_iiko(token):
-    url_bye = 'https://burgerkit-co.iiko.it:443/resto/api/logout?key=' + str(token)
-    urlfetch.fetch(url_bye)
-
-
-def get_iiko_average_check_inhouse(date_from, date_to):
+def get_iiko_average_check_inhouse(
+    date_from: str, date_to: str
+) -> Optional[List[List[str]]]:
+    """Return average check in-house between two dates."""
 
     try:
         token_iiko = login_iiko()
-        url_param = 'https://burgerkit-co.iiko.it:443/resto/api/v2/reports/olap?key=' + str(token_iiko)
-        params = {"reportType":"SALES",
-                  "buildSummary":"false",
-                  "groupByRowFields": ["RestorauntGroup"],
-                  "aggregateFields": ["DishDiscountSumInt.average"],
-                  "filters":{
-                      "OpenDate.Typed":{
-                          "filterType": "DateRange",
-                          "periodType": "CUSTOM",
-                          # "from": "2021-09-01T00:00:00.000",
-                          "from": "{}T00:00:00.000".format(date_from),
-                          # "to": "2021-09-02T00:00:00.000"
-                           "to": "{}T00:00:00.000".format(date_to)
-                      },
-                      "DeletedWithWriteoff": {
-                          "filterType": "IncludeValues",
-                          "values": ["NOT_DELETED"]
-                      },
-                      "OrderDeleted": {
-                          "filterType": "IncludeValues",
-                          "values": ["NOT_DELETED"]
-                      },
-                      "OrderType": {
-                          "filterType": "ExcludeValues",
-                          "values": ["Доставка курьером", "Доставка самовывоз", "Доставка Яндекс.Еда"]
-                      },
-                      "PayTypes": {
-                          "filterType": "IncludeValues",
-                          "values": ["Наличные", "Visa", "SBRF"]
-                      },
-                      "Storned": {
-                          "filterType": "IncludeValues",
-                          "values": ["FALSE"]
-                      },
-                      "DiscountPercent": {
-                          "filterType": "Range",
-                          "from": 0,
-                          "to": 1,
-                      }
-                  }
-            }
-        # print(params)
-        response = requests.post(url_param, json=params)
+        url = f"{BASE_URL}/v2/reports/olap?key={token_iiko}"
+        params = {
+            "reportType": "SALES",
+            "buildSummary": "false",
+            "groupByRowFields": ["RestorauntGroup"],
+            "aggregateFields": ["DishDiscountSumInt.average"],
+            "filters": {
+                "OpenDate.Typed": {
+                    "filterType": "DateRange",
+                    "periodType": "CUSTOM",
+                    "from": f"{date_from}T00:00:00.000",
+                    "to": f"{date_to}T00:00:00.000",
+                },
+                "DeletedWithWriteoff": {
+                    "filterType": "IncludeValues",
+                    "values": ["NOT_DELETED"],
+                },
+                "OrderDeleted": {
+                    "filterType": "IncludeValues",
+                    "values": ["NOT_DELETED"],
+                },
+                "OrderType": {
+                    "filterType": "ExcludeValues",
+                    "values": [
+                        "Доставка курьером",
+                        "Доставка самовывоз",
+                        "Доставка Яндекс.Еда",
+                    ],
+                },
+                "PayTypes": {
+                    "filterType": "IncludeValues",
+                    "values": ["Наличные", "Visa", "SBRF"],
+                },
+                "Storned": {
+                    "filterType": "IncludeValues",
+                    "values": ["FALSE"],
+                },
+                "DiscountPercent": {
+                    "filterType": "Range",
+                    "from": 0,
+                    "to": 1,
+                },
+            },
+        }
+        response = requests.post(url, json=params, timeout=10)
+        response.raise_for_status()
         result = response.json()
-        # print(result['data'])
         logout_iiko(token_iiko)
 
-        return result['data']
-    except RuntimeError:
-        print('\n get_iiko_revenue error \n')
+        return result.get("data")
+    except requests.RequestException:
+        print("\n get_iiko_average_check_inhouse error \n")
         return None
 
 
