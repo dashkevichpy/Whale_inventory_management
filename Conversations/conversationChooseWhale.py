@@ -33,6 +33,7 @@ async def reset_store_employee(
     message: Message, state: Optional[FSMContext] = None
 ) -> None:
     """Clear store assignment for user."""
+    logging.debug("reset_store_employee for %s", message.from_user.id)
 
     id_employee = pg_del_employee_from_store(message.chat.id)
     if id_employee:
@@ -49,6 +50,7 @@ async def reset_store_employee(
 @check_group
 async def choose_whale_start(message: Message, state: FSMContext) -> None:
     """Send store list to user."""
+    logging.debug("choose_whale_start from %s", message.from_user.id)
 
     stores = np.array(get_stores_open("store_name")).flatten()
     sent = await message.answer(
@@ -64,6 +66,7 @@ async def choose_whale_start(message: Message, state: FSMContext) -> None:
 @router.callback_query(ChooseWhaleState.assign_whale)
 async def assign_whale(query: CallbackQuery, state: FSMContext) -> None:
     """Assign user to selected store."""
+    logging.debug("assign_whale %s", query.data)
 
     whale = query.data
     data = await state.get_data()
@@ -91,6 +94,7 @@ async def timeout_callback_choose_whale(
     query: CallbackQuery, state: FSMContext
 ) -> None:
     """Notify user about timeout for callback event."""
+    logging.debug("timeout_callback_choose_whale")
 
     data = await state.get_data()
     try:
@@ -110,6 +114,7 @@ async def timeout_message_choose_whale(
     message: Message, state: FSMContext
 ) -> None:
     """Notify user about timeout for message event."""
+    logging.debug("timeout_message_choose_whale")
 
     data = await state.get_data()
     try:
@@ -129,6 +134,7 @@ async def choose_whale_cancel(
     message: Message | CallbackQuery, state: FSMContext
 ) -> None:
     """Cancel choosing process."""
+    logging.debug("choose_whale_cancel")
 
     data = await state.get_data()
     try:
@@ -154,5 +160,7 @@ async def choose_whale_cancel(
 
 def conversation_choose_whale(dispatcher: object | None = None) -> Router:
     """Return router with choose whale handlers."""
+    logging.debug("conversation_choose_whale")
+    return router
 
     return router

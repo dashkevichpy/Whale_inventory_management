@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 from typing import Union
+import logging
 
 from aiogram import Router
 from aiogram import F
@@ -37,6 +38,7 @@ class RegisterState(StatesGroup):
 @check_group
 async def register_start(message: Message, state: FSMContext) -> None:
     """Start registration and ask for employee department."""
+    logging.debug("register_start from %s", message.from_user.id)
 
     departments = pg_get_department()
     await message.answer(
@@ -56,6 +58,7 @@ async def register_start(message: Message, state: FSMContext) -> None:
 @router.callback_query(RegisterState.department)
 async def register_choose_position(query: CallbackQuery, state: FSMContext) -> None:
     """Send job titles for selected department."""
+    logging.debug("register_choose_position: %s", query.data)
 
     department = query.data
     await state.update_data(department=department)
@@ -70,6 +73,7 @@ async def register_choose_position(query: CallbackQuery, state: FSMContext) -> N
 @router.callback_query(RegisterState.position)
 async def register_finish(query: CallbackQuery, state: FSMContext) -> None:
     """Save employee information and show start menu."""
+    logging.debug("register_finish: %s", query.data)
 
     position = query.data
     await query.message.edit_text(
@@ -93,6 +97,7 @@ async def register_cancel(
     message: Union[Message, CallbackQuery], state: FSMContext
 ) -> None:
     """Cancel registration and return to start menu."""
+    logging.debug("register_cancel")
 
     data = await state.get_data()
     try:

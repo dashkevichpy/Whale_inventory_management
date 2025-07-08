@@ -6,6 +6,7 @@ import os
 
 from aiogram import Bot, Dispatcher, Router
 from aiogram.enums import ParseMode
+from aiogram.client.default import DefaultBotProperties
 from aiogram.filters import Command, CommandStart
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.memory import MemoryStorage
@@ -18,6 +19,7 @@ from Conversations.conversationChooseWhale import (
     conversation_choose_whale,
     reset_store_employee,
 )
+from Conversations.conversationRegister import conversation_register
 
 load_dotenv()
 TOKEN = os.getenv("TG_TOKEN")
@@ -29,6 +31,7 @@ router = Router()
 @check_group
 async def cmd_start(message: Message, state: FSMContext) -> None:
     """Send greeting and start keyboard."""
+    logging.debug("cmd_start from %s", message.from_user.id)
     await message.answer(
         text=f"Привет, {message.from_user.first_name}!",
         reply_markup=await keyboard_start(message.chat.id, state),
@@ -39,24 +42,31 @@ async def cmd_start(message: Message, state: FSMContext) -> None:
 @check_group
 async def cmd_reset_store(message: Message, state: FSMContext) -> None:
     """Reset employee store choice."""
+    logging.debug("cmd_reset_store from %s", message.from_user.id)
     await reset_store_employee(message, state)
 
 
 async def main() -> None:
     """Run bot polling."""
+    logging.debug("Starting bot")
     if not TOKEN:
         raise RuntimeError("TG_TOKEN not set")
 
     dp = Dispatcher(storage=MemoryStorage())
     dp.include_router(router)
     dp.include_router(conversation_choose_whale())
+    dp.include_router(conversation_register())
 
-    bot = Bot(TOKEN, parse_mode=ParseMode.HTML)
+    bot = Bot(
+        TOKEN,
+        default=DefaultBotProperties(parse_mode=ParseMode.HTML),
+    )
     await dp.start_polling(bot)
 
 
+
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.DEBUG)
     try:
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):
