@@ -7,7 +7,6 @@ from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 from aiogram.fsm.context import FSMContext
 
 
-from Conversations.conversationStoplist import BUTTON_STOP_START
 from keyboards import (
     BUTTON_BREAK_TITLE,
     BUTTON_DELIVERY_TIME_WATCH,
@@ -18,6 +17,7 @@ from keyboards import (
     BUTTON_TRANSFER,
     BUTTON_WAIT_TITLE,
     BUTTON_WHAT_WHALE,
+    BUTTON_STOP_START,
 )
 from postgres import pg_get_employee_in_store, pg_get_position_by_id
 

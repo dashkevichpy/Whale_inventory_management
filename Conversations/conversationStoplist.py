@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 from enum import Enum
-from typing import Union
+from typing import Union, TYPE_CHECKING
 
 from aiogram import Router
 from aiogram import F
@@ -13,13 +13,16 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 from dotenv import load_dotenv
 
-from class_StartKeyboard import Employee, keyboard_start
 from decorators import check_group
 from keyboards import (
     BUTTON_CANCEL_CONVERSATION,
+    BUTTON_STOP_START,
     keyboard_cancel_conversation,
     keyboard_from_list,
 )
+
+if TYPE_CHECKING:
+    from class_StartKeyboard import Employee
 from postgres import (
     pg_add_stop_list,
     pg_get_nomenclature_to_stop_list,
@@ -54,8 +57,6 @@ class StopAction(Enum):
         self.callback = callback
 
 
-BUTTON_STOP_START = "🛑 STOP"
-
 
 def keyboard_stop_actions(has_remove: bool) -> InlineKeyboardMarkup:
     """Return keyboard with available stop list actions."""
@@ -82,6 +83,8 @@ async def _to_dispatch(message: Message, state: FSMContext, info: str | None = N
 async def _cancel_reply(sender: Union[Message, CallbackQuery], state: FSMContext) -> None:
     """Return to start menu and clear state."""
 
+    from class_StartKeyboard import keyboard_start
+
     send: Message
     if isinstance(sender, CallbackQuery):
         await sender.answer()
@@ -100,6 +103,8 @@ async def _cancel_reply(sender: Union[Message, CallbackQuery], state: FSMContext
 @check_group
 async def stoplist_start(message: Message, state: FSMContext) -> None:
     """Entry point for stop list actions."""
+
+    from class_StartKeyboard import keyboard_start
 
     await state.update_data(id_user_chat=message.chat.id)
     data = await state.get_data()

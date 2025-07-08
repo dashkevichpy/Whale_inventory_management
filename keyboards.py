@@ -18,6 +18,7 @@ BUTTON_STOCKS = '🖋 Запасы'
 BUTTON_TRANSFER = '📦 Перемещение'
 BUTTON_REGISTER = '📑 Зарегистрироваться'
 BUTTON_WHAT_WHALE = "📍 Выбрать точку"
+BUTTON_STOP_START = "🛑 STOP"
 BUTTON_BM_SHIPMENT_CHECK = "Принять поставку"
 BUTTON_DELIVERY_WAIT = '🚚 Поставить ожидание'
 BUTTON_DELIVERY_TIME_WATCH = '👀 Посмотреть ожидания'
