@@ -1,6 +1,5 @@
 import abc
 import gc
-import tracemalloc
 from collections import namedtuple
 from enum import Enum, auto
 
@@ -18,7 +17,6 @@ import os
 
 load_dotenv()
 LINK_GS_JSON = os.getenv('LINK_GS_JSON')
-TIME_ZONE = os.getenv('TIME_ZONE')
 from typing import Union
 
 from postgres import append_df_pgre
@@ -28,7 +26,7 @@ WRITE_OFF_SHEET_NAME = 'Списание'
 WRITE_OFF_TMRR_SHEET_NAME = 'Спишется завтра'
 ACCEPTANCE_SHEET_NAME = '📦 Прием транспортировки'
 MORNING_INVENT_SHEET_NAME = '☀️Утро инвентаризация'
-# INVENT_SHEET_NAME = 'Инвентаризация'
+
 
 
 
@@ -39,34 +37,44 @@ class WhaleSheet(abc.ABC):
 
     @abc.abstractmethod
     def __init__(self, em: Employee) -> None:
-        # token = '1WDrTWxR0aJ9ErZuPCT1kSqTcyQd-ovOY8EnnZFmcB0Q'  # token Posrgre DB
-        token = pg_get_invent_gs_token(em.id_store, em.invent_col)  # id кита и колонка invent_bm или invent_cash -
+        """Initialize Google spreadsheet handler.
+
+        Args:
+            em: Employee information with store identifiers.
+        """
+        token = pg_get_invent_gs_token(em.id_store, em.invent_col)
         gs = pygsheets.authorize(service_file=LINK_GS_JSON)
         self.em = em
         self.wb = gs.open_by_key(token)
 
     @abc.abstractmethod
     def clear(self) -> None:
+        """Clear worksheet content."""
         raise NotImplemented
 
     @abc.abstractmethod
     def new_sheet(self) -> None:
+        """Create a new worksheet."""
         raise NotImplemented
 
     @abc.abstractmethod
     def check_sheet(self, df: pd.DataFrame) -> pd.Series:
+        """Return a series with errors for the provided dataframe."""
         raise NotImplemented
 
     @abc.abstractmethod
     def get_result(self) -> None:
+        """Process worksheet and return status."""
         raise NotImplemented
 
     @abc.abstractmethod
     def update_error(self, *args) -> None:
+        """Write error information to sheet."""
         raise NotImplemented
 
     @abc.abstractmethod
     def write_db(self, df: pd.DataFrame) -> None:
+        """Write dataframe to database."""
         raise NotImplemented
 
 
@@ -85,8 +93,21 @@ class InventSheet(WhaleSheet):
     check_columns = ['weight', 'container', 'y_or_n', 'un']
 
 
-    def __init__(self, em: Employee, sheet: Union[str, pygsheets.worksheet.Worksheet], func_get_nomenclature,
-                 invent_type: Union[str, None]) -> None:
+    def __init__(
+        self,
+        em: Employee,
+        sheet: Union[str, pygsheets.worksheet.Worksheet],
+        func_get_nomenclature,
+        invent_type: Union[str, None],
+    ) -> None:
+        """Initialize inventory worksheet.
+
+        Args:
+            em: Employee information.
+            sheet: Worksheet title or object.
+            func_get_nomenclature: Callable to fetch nomenclature.
+            invent_type: Inventory type for DB records.
+        """
         if isinstance(sheet, str):
             super().__init__(em)
             self.ws = self.wb.worksheet_by_title(sheet)
@@ -101,11 +122,15 @@ class InventSheet(WhaleSheet):
 
 
     def clear(self) -> None:
+        """Clear worksheet."""
         self.ws.clear('*')
 
-    def template(self) -> pd.DataFrame:
+        def template(self) -> pd.DataFrame:
+            """Return template dataframe for the worksheet."""
 
-        df = pd.DataFrame(self.func_get_nomenclature(id_store=self.em.id_store, bm_cash=self.em.department_code))
+        df = pd.DataFrame(
+            self.func_get_nomenclature(id_store=self.em.id_store, bm_cash=self.em.department_code)
+        )
         df.loc[df['name_container'] == 'штуки', 'un'] = ''  # добавляем столбец 'штуки'
         df.loc[df['name_container'] == 'да/нет', 'y_or_n'] = ''  # столбец с да/ нет - 1 или 0
         df.loc[df['name_container'] == 'да/нет', 'nomenclature_name'] = df['nomenclature_name'] + ' ' + df['question_invent']
@@ -116,11 +141,8 @@ class InventSheet(WhaleSheet):
         return df
 
     def new_sheet(self) -> None:
-        '''
-            создает новый лист
-        :return:
-        '''
-        # df = self.template()
+        """Create new worksheet with template."""
+
         df = self.template()
         df = df[self.headers.keys()]  # оставляем только нужные столбцы
         df.columns = self.headers.values()  # переименовываем
@@ -128,6 +150,8 @@ class InventSheet(WhaleSheet):
         self.ws.set_dataframe(df=df, start=(1, 1), copy_head=True)
 
     def check_sheet(self, df: pd.DataFrame) -> pd.Series:
+        """Validate worksheet data and return error column."""
+
         df['error'] = super().symbol_empty
         for key_field in self.check_columns:
             key_invent = key_field + self.suff_invent
@@ -146,6 +170,8 @@ class InventSheet(WhaleSheet):
         return df['error']
 
     def write_db(self, df: pd.DataFrame) -> None:
+        """Write inventory results to database."""
+
         invent = df[['iiko_code', 'invent_result']]
         invent.insert(1, 'id_store', self.em.id_store)
         if self.invent_type:
@@ -153,10 +179,14 @@ class InventSheet(WhaleSheet):
         append_df_pgre(df=invent, table_name='invent_whale', index=False, index_label=None)
 
     def update_error(self, sr: pd.Series,) -> None:
+        """Update error column on worksheet."""
+
         df = pd.DataFrame(sr)
         self.ws.set_dataframe(df=df, start=(self.start_cell[0], self.error_col_num), copy_head=False)
 
     def get_result(self):
+        """Read worksheet, validate and save result."""
+
         df = self.template()
         # считываем без учета колонки ошибки
         df_inv = self.ws.get_as_df(has_header=False, empty_value='', start=self.start_cell,
@@ -183,36 +213,41 @@ class InventSheet(WhaleSheet):
         else:
             return False
 
-# ee = Employee(department_code='BM', id_store=1, invent_col='invent_bm', employee_name=None, store_name='БК2', department_name='БМ_ПМ', position='БМ')
-# invent_whale_sheet = InventSheet(em=ee, sheet_name=INVENT_SHEET_NAME,
-#                                          func_get_nomenclature=pg_get_invent_template, invent_type=None)
-
 class AllSheetInvent(InventSheet):
     def __init__(self, sheet_name: str, func_get_nomenclature):
+        """Initialize inventory sheets for all stores."""
+
         gs = pygsheets.authorize(service_file=LINK_GS_JSON)
         self.token = get_all_invent_token()
         self.allsheet = []
         self.sheet = sheet_name
         for t in self.token:
-            employee = Employee(department_code=t['department_code'], id_store=t['id_store'], invent_col=t['col_name'],
-                                employee_name=None, store_name=None, department_name=None, position=None)
+            employee = Employee(
+                department_code=t['department_code'],
+                id_store=t['id_store'],
+                invent_col=t['col_name'],
+                employee_name=None,
+                store_name=None,
+                department_name=None,
+                position=None,
+            )
             wb = gs.open_by_key(t['token'])
             ws = wb.worksheet_by_title(self.sheet)
-            # sheet = super().__init__(em=employee, sheet=ws, func_get_nomenclature=func_get_nomenclature, invent_type=None)
-            sheet = InventSheet(em=employee, sheet=ws, func_get_nomenclature=func_get_nomenclature, invent_type=None)
+            sheet = InventSheet(
+                em=employee,
+                sheet=ws,
+                func_get_nomenclature=func_get_nomenclature,
+                invent_type=None,
+            )
             self.allsheet.append(sheet)
 
     def update(self):
+        """Update worksheets for all stores."""
+
         for sheet in self.allsheet:
-            # if sheet.em.id_store == 1 and sheet.em.department_code == 'CASHIER':
             sheet.new_sheet()
 
 
-# AllSheetInvent_test = AllSheetInvent(INVENT_SHEET_NAME, pg_get_invent_template)
-# AllSheetInvent_test.update()
-
-# invent_sheets = AllSheetInvent(INVENT_SHEET_NAME, pg_get_invent_template)
-# invent_sheets.create_new('tesr')
 
 
 class WriteOffSheet(WhaleSheet):
@@ -221,8 +256,16 @@ class WriteOffSheet(WhaleSheet):
     symbol_contribute = '✅'
     symbol_input_container = 'да->'
 
-    def __init__(self, em: Employee, sheet: Union[str,pygsheets.worksheet.Worksheet], headers: dict, check_columns: list[str],
-                 formula_columns: dict, columns_pgre: list) -> None:
+    def __init__(
+        self,
+        em: Employee,
+        sheet: Union[str, pygsheets.worksheet.Worksheet],
+        headers: dict,
+        check_columns: list[str],
+        formula_columns: dict,
+        columns_pgre: list,
+    ) -> None:
+        """Initialize write-off worksheet."""
         if isinstance(sheet, str):
             super().__init__(em)
             self.ws = self.wb.worksheet_by_title(sheet)
@@ -257,9 +300,11 @@ class WriteOffSheet(WhaleSheet):
                 raise ValueError(f'formula_columns - столбец {i} не принадлежит {self.headers.keys()}')
 
     def clear(self) -> None:
+        """Clear worksheet."""
         self.ws.clear('*')
 
     def new_sheet(self) -> None:
+        """Create a new worksheet with formulas."""
 
         self.clear()
         if self.formula_columns:
@@ -270,6 +315,8 @@ class WriteOffSheet(WhaleSheet):
         self.ws.update_row(index=1, values=[i.column_name for i in self.headers.values()], col_offset=0)
 
     def check_sheet(self, df: pd.DataFrame) -> pd.Series:
+        """Validate worksheet data and return error column."""
+
         df['error'] = super().symbol_empty
         for col in self.check_columns:
             df.loc[df[col] == '', 'error'] = 'не внесено ' + str(col)
@@ -283,22 +330,38 @@ class WriteOffSheet(WhaleSheet):
         return df['error']
 
     def update_error(self, sr: pd.Series, count_contribute) -> None:
+        """Update error column on worksheet."""
+
         df = pd.DataFrame(sr)
         self.ws.set_dataframe(df=df, start=(self.start_cell[0] + count_contribute, self.headers['error'].column_num), copy_head=False)
 
     def write_db(self, df: pd.DataFrame) -> None:
+        """Write write-off information to database."""
+
         df_pgre = df[self.columns_pgre]
         df_pgre.insert(loc=2, column='id_store', value=self.em.id_store)
         append_df_pgre(df=df_pgre, table_name='write_off_store', index=False, index_label=None)
 
 
     def contribute(self, offset_row: int, count_contribute: int) -> None:
-        self.ws.update_col(self.headers['contribute'].column_num, [self.symbol_contribute for _ in range(count_contribute)],
-                           row_offset=offset_row + self.start_cell[0] - 1)
+        """Mark rows as processed."""
+
+        self.ws.update_col(
+            self.headers['contribute'].column_num,
+            [self.symbol_contribute for _ in range(count_contribute)],
+            row_offset=offset_row + self.start_cell[0] - 1,
+        )
 
     def get_result(self):
-        df = self.ws.get_as_df(has_header=False, start=self.start_cell, end=(self.end_row, self.end_column),
-                               numerize=False, include_tailing_empty=True)
+        """Read sheet, validate and save results."""
+
+        df = self.ws.get_as_df(
+            has_header=False,
+            start=self.start_cell,
+            end=(self.end_row, self.end_column),
+            numerize=False,
+            include_tailing_empty=True,
+        )
         df.columns = self.headers.keys()
         already_contribute = df[df['contribute'] == self.symbol_contribute]
         already_count_contribute = len(already_contribute.index)
@@ -338,8 +401,6 @@ class WriteOffSheet(WhaleSheet):
             return False
 
 
-# wr_off_tmrr.get_result()
-# wr_off_tmrr.new_sheet()
 
 class WriteOffType(Enum):
     WRITE_OFF_TODAY = auto()
@@ -348,12 +409,7 @@ class WriteOffType(Enum):
 
 
 def wr_off_init(em: Employee, write_off_type: WriteOffType, wb) -> WriteOffSheet:
-    '''
-        инициализирует по типу возврата
-    :param em:
-    :param write_off_type:
-    :return:
-    '''
+    """Create write-off sheet based on type."""
     if write_off_type == WriteOffType.WRITE_OFF_TMRR:
         headers = {'iiko_code': 'iiko_code', 'nomenclature_name': 'заготовка', 'measure_un': 'Единицы внесения',
                    'input_amount': 'Кол-во', 'is_container?': 'Вносить тару?', 'container_amount': 'Кол-во тары',
@@ -414,59 +470,40 @@ def wr_off_init(em: Employee, write_off_type: WriteOffType, wb) -> WriteOffSheet
 
 class AllSheetWriteOff(WriteOffSheet):
     def __init__(self):
+        """Initialize write-off sheets for all stores."""
+
         gs = pygsheets.authorize(service_file=LINK_GS_JSON)
         token = get_all_invent_token()
         self.allsheet = []
         for t in token:
-            employee = Employee(department_code=t['department_code'], id_store=t['id_store'], invent_col=t['col_name'],
-                                employee_name=None, store_name=None, department_name=None, position=None)
+            employee = Employee(
+                department_code=t['department_code'],
+                id_store=t['id_store'],
+                invent_col=t['col_name'],
+                employee_name=None,
+                store_name=None,
+                department_name=None,
+                position=None,
+            )
 
             wb = gs.open_by_key(t['token'])
             sheet = wr_off_init(employee, WriteOffType.ALL_WRITE_OFF_TODAY, wb)
             self.allsheet.append(sheet)
 
     def update(self):
+        """Update write-off worksheets for all stores."""
+
         for sheet in self.allsheet:
             sheet.new_sheet()
             del sheet
             gc.collect()
 
 
-# test_woff = AllSheetWriteOff()
-# test_woff.update()
-
-def update_template():
-    '''
-        добавляем новые листы в каждый из
-    :return:
-    '''
-    gs = pygsheets.authorize(service_file=LINK_GS_JSON)
-    token = get_all_invent_token()
-    temp_sheet_code = 1976751449
-    temp_sheet_name = '📦 Прием транспортировки'
-    temp_token = '1WDrTWxR0aJ9ErZuPCT1kSqTcyQd-ovOY8EnnZFmcB0Q'
-    new_sheet_name = '📦 Прием транспортировки'
-    # templ_wb = gs.open_by_key(temp_token)  # 🍔 Инвент БК2 БМ
-    # templ_ws = templ_wb.worksheet_by_title('Списание')
-
-    for t in token:
-        wb = gs.open_by_key(t['token'])
-        try:
-            wb.add_worksheet(new_sheet_name, rows=1, cols=1,
-                                  src_tuple=(temp_token, temp_sheet_code),
-                                  src_worksheet=temp_sheet_name, index=None)
-            print(t['id_store'], t['department_code'])
-        except HttpError:
-            print(f"лист уже существует {t['id_store']} - {t['department_code']}")
-            ws = wb.worksheet_by_title(new_sheet_name)
-            wb.del_worksheet(ws)
-            wb.add_worksheet(new_sheet_name, rows=1, cols=1,
-                             src_tuple=(temp_token, temp_sheet_code),
-                             src_worksheet=temp_sheet_name, index=None)
-            continue
 
 
 def update_invent_sheets():
+    """Refresh inventory sheets for all stores."""
+
     invent_sheets = AllSheetInvent(INVENT_SHEET_NAME, pg_get_invent_template)
     invent_sheets.update()
     del invent_sheets
@@ -474,14 +511,17 @@ def update_invent_sheets():
 
 
 def update_acceptance_sheets():
+    """Refresh acceptance sheets for all stores."""
+
     invent_sheets = AllSheetInvent(ACCEPTANCE_SHEET_NAME, pg_get_acceptance_whale_template)
     invent_sheets.update()
     del invent_sheets
     gc.collect()
 
 
-# update_acceptance_sheets()
 def update_write_off_sheets():
+    """Refresh write-off sheets for all stores."""
+
     write_off_sheets = AllSheetWriteOff()
     write_off_sheets.update()
     del write_off_sheets
@@ -489,11 +529,14 @@ def update_write_off_sheets():
 
 
 def update_morning_invent_sheets():
-    invent_sheets = AllSheetInvent(MORNING_INVENT_SHEET_NAME, pg_get_acceptance_whale_template)  # позиции у утр. инвент и приёмки транспортировки совпадают
+    """Refresh morning inventory sheets for all stores."""
+
+    invent_sheets = AllSheetInvent(
+        MORNING_INVENT_SHEET_NAME,
+        pg_get_acceptance_whale_template,
+    )  # позиции у утр. инвент и приёмки транспортировки совпадают
     invent_sheets.update()
     del invent_sheets
     gc.collect()
 
-# update_write_off_sheets()
-# update_acceptance_sheets()
-# update_morning_invent_sheets()
+
