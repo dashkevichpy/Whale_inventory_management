@@ -17,6 +17,7 @@ GS_BOT_STOP_LIST_TOKEN = os.getenv("GS_BOT_STOP_LIST_TOKEN")
 GS_AVERAGE_CHECK = os.getenv("GS_AVERAGE_CHECK")
 AVERAGE_CHECK_SHEET_NAME = os.getenv("AVERAGE_CHECK_SHEET_NAME")
 TIME_ZONE = os.getenv("TIME_ZONE", "Asia/Krasnoyarsk")
+TEST_MODE = os.getenv("TEST_MODE", "False").lower() == "true"
 
 logging.basicConfig(level=logging.INFO, filename='app.log', filemode='w',
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -32,11 +33,16 @@ def open_sheet(gs_token: str, ws_name: str) -> pygsheets.worksheet.Worksheet:
 
 
 def insert_to_error_krsk_bot(sheet_name: str, entry: list):
+    """Write entry about errors to Google Sheet or log in test mode."""
+
+    if TEST_MODE:
+        logging.info("TEST_MODE: insert_to_error_krsk_bot %s", entry)
+        return
 
     entry_sheet = gs.open_by_key(GS_BOT_ENTRY_TOKEN)
     worksheet = entry_sheet.worksheet_by_title(sheet_name)
     worksheet.refresh()
-    row_to_write = worksheet.cell('A1').value
+    row_to_write = worksheet.cell("A1").value
     worksheet.insert_rows(int(row_to_write), values=entry, inherit=True)
     del worksheet
     gc.collect()
@@ -109,18 +115,34 @@ def get_list_of_errors_by_positions(position):
 def insert_entry_breakages_gs(
     id_user, which_whale, what_broken, critical, comment, sheet
 ) -> None:
-    """Write breakage entry to Google Sheet."""
+    """Write breakage entry to Google Sheet or log in test mode."""
 
     krsk_now = datetime.now(tz=pytz.timezone(TIME_ZONE))
+
+    if TEST_MODE:
+        logging.info(
+            "TEST_MODE: insert_entry_breakages_gs %s %s %s %s",
+            which_whale,
+            what_broken,
+            critical,
+            comment,
+        )
+        return
+
     entry_sheet = gs.open_by_key(GS_BOT_ENTRY_TOKEN)
     worksheet = entry_sheet.worksheet_by_title(sheet)
-    worksheet.insert_rows(worksheet.rows, values=[krsk_now.strftime("%d-%m-%Y %H:%M"),
-                                                  id_user,
-                                                  which_whale,
-                                                  what_broken,
-                                                  critical,
-                                                  comment],
-                          inherit=True)
+    worksheet.insert_rows(
+        worksheet.rows,
+        values=[
+            krsk_now.strftime("%d-%m-%Y %H:%M"),
+            id_user,
+            which_whale,
+            what_broken,
+            critical,
+            comment,
+        ],
+        inherit=True,
+    )
     del worksheet
     gc.collect()
 
@@ -128,19 +150,35 @@ def insert_entry_breakages_gs(
 def insert_entry_errors_gs(
     id_user, which_whale, when, error_type, comment, sheet
 ) -> None:
-    """Write error entry to Google Sheet."""
+    """Write error entry to Google Sheet or log in test mode."""
 
     krsk_now = datetime.now(tz=pytz.timezone(TIME_ZONE))
+
+    if TEST_MODE:
+        logging.info(
+            "TEST_MODE: insert_entry_errors_gs %s %s %s",
+            which_whale,
+            when,
+            error_type,
+        )
+        return
+
     entry_sheet = gs.open_by_key(GS_BOT_ENTRY_TOKEN)
     worksheet = entry_sheet.worksheet_by_title(sheet)
     worksheet.refresh()
-    row_to_write = worksheet.cell('A1').value
-    worksheet.insert_rows(int(row_to_write), values=[krsk_now.strftime("%d-%m-%Y %H:%M"),
-                                                  id_user,
-                                                  which_whale,
-                                                  when,
-                                                  error_type,
-                                                  comment], inherit=True)
+    row_to_write = worksheet.cell("A1").value
+    worksheet.insert_rows(
+        int(row_to_write),
+        values=[
+            krsk_now.strftime("%d-%m-%Y %H:%M"),
+            id_user,
+            which_whale,
+            when,
+            error_type,
+            comment,
+        ],
+        inherit=True,
+    )
     del worksheet
     gc.collect()
 
