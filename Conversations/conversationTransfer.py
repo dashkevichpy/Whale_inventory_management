@@ -1,170 +1,226 @@
-import numpy as np
-import pytz
-from telegram import ParseMode
-from telegram.ext import MessageHandler
-from telegram.ext import ConversationHandler
-from telegram.ext import CallbackQueryHandler
-from telegram.ext import Filters
+from __future__ import annotations
 
-from class_StartKeyboard import keyboard_start
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
-CHAT_TIMEOUT = int(os.getenv('CHAT_TIMEOUT'))
-ERROR_ADMIN_ID = os.getenv('ERROR_ADMIN_ID')
-
-from gSheet import insert_to_error_krsk_bot
-from keyboards import BUTTON_TRANSFER, BUTTON_TRANSFER_CANCEL, keyboard_cancel_transfer, keyboard_from_list, \
-    keyboard_cancel_conversation
-from postgres import get_stores_open
 from datetime import datetime
 
-DT_W_CARGO_O, CARGOTYPE_CARGOCOMMENT, CARGOCOMMENT_FROM, FROM_TO, TO_WRITE = range(5)
-FROM, TO, CARGO_TYPE, CARGO_COMMENT, DELIVERY_TYPE = range(5)
+import numpy as np
+import pytz
+from aiogram import Router
+from aiogram.enums import ParseMode
+from aiogram.filters import Text
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.types import CallbackQuery, Message
+from dotenv import load_dotenv
 
-ADDITIONAL_DIST_POINTS_FROM = ['ФК', 'Магазин', 'сэндвичи (GH и другие)', 'Прочее']
-ADDITIONAL_DIST_POINTS_TO = ['ФК', 'Размен', 'Магазин', 'сэндвичи (GH и другие)', 'Прочее']
-CARGO_TYPE_LIST = ['заготовки', 'хоз.средства', 'упаковка', 'деньги', 'прочее']
-DELIVERY_TYPE_LIST = ['🚗 Курьер', '🚖 Такси', '🚘 Сотрудник']
+from class_StartKeyboard import keyboard_start
+from gSheet import insert_to_error_krsk_bot
+from keyboards import (
+    BUTTON_TRANSFER,
+    BUTTON_TRANSFER_CANCEL,
+    keyboard_cancel_conversation,
+    keyboard_from_list,
+)
+from postgres import get_stores_open
+
+load_dotenv()
+CHAT_TIMEOUT = int(os.getenv("CHAT_TIMEOUT"))
+ERROR_ADMIN_ID = os.getenv("ERROR_ADMIN_ID")
+
+router = Router()
+
+ADDITIONAL_DIST_POINTS_FROM = [
+    "ФК",
+    "Магазин",
+    "сэндвичи (GH и другие)",
+    "Прочее",
+]
+ADDITIONAL_DIST_POINTS_TO = [
+    "ФК",
+    "Размен",
+    "Магазин",
+    "сэндвичи (GH и другие)",
+    "Прочее",
+]
+CARGO_TYPE_LIST = ["заготовки", "хоз.средства", "упаковка", "деньги", "прочее"]
+DELIVERY_TYPE_LIST = ["🚗 Курьер", "🚖 Такси", "🚘 Сотрудник"]
 
 
-def delivery_type(update, context):
-    # context.user_data[ID_USER_TRANSFER] = update.message.chat_id
-    update.message.reply_text(
-        text='Выбрали ' + BUTTON_TRANSFER,
+class TransferState(StatesGroup):
+    """Conversation states for cargo transfer."""
+
+    delivery_type = State()
+    cargo_type = State()
+    cargo_comment = State()
+    from_store = State()
+    to_store = State()
+
+
+@router.message(Text(BUTTON_TRANSFER))
+async def transfer_start(message: Message, state: FSMContext) -> None:
+    """Start transfer conversation."""
+
+    await state.update_data(id_user_chat=message.chat.id)
+    await message.answer(
+        text=f"Выбрали {BUTTON_TRANSFER}",
         reply_markup=keyboard_cancel_conversation(),
     )
-    update.effective_message.reply_text(
-        text='Кем перемещаем?',
+    await message.answer(
+        text="Кем перемещаем?",
         reply_markup=keyboard_from_list(DELIVERY_TYPE_LIST, 3),
     )
-    return DT_W_CARGO_O
+    await state.set_state(TransferState.delivery_type)
 
 
-def deliverytype_cargo(update, context):
-    query = update.callback_query
-    context.user_data[DELIVERY_TYPE] = query.data
-    query.edit_message_text(
-        text='<b>Перемещаем: </b>{}\n'
-             'Тип груза? '.format(context.user_data[DELIVERY_TYPE]),
-        reply_markup=keyboard_from_list(CARGO_TYPE_LIST, 2),  # выбор точки
-        parse_mode=ParseMode.HTML
+@router.callback_query(TransferState.delivery_type)
+async def set_delivery_type(query: CallbackQuery, state: FSMContext) -> None:
+    """Select delivery type."""
+
+    delivery_type = query.data
+    await state.update_data(delivery_type=delivery_type)
+    await query.message.edit_text(
+        text=f"<b>Перемещаем: </b>{delivery_type}\nТип груза?",
+        parse_mode=ParseMode.HTML,
+        reply_markup=keyboard_from_list(CARGO_TYPE_LIST, 2),
     )
-    return CARGOTYPE_CARGOCOMMENT
+    await state.set_state(TransferState.cargo_type)
 
 
-def cargotype_cargocomment(update, context):
-    query = update.callback_query
-    context.user_data[CARGO_TYPE] = query.data
-    query.edit_message_text(
-        text='<b>Перемещаем: </b>{}\n\n'
-             '<b>Перевозим: </b>{}\n\n'
-             'Что конкретно? Напишите'.format(context.user_data[DELIVERY_TYPE], context.user_data[CARGO_TYPE]),
-        parse_mode=ParseMode.HTML
+@router.callback_query(TransferState.cargo_type)
+async def set_cargo_type(query: CallbackQuery, state: FSMContext) -> None:
+    """Select cargo type."""
+
+    cargo_type = query.data
+    await state.update_data(cargo_type=cargo_type)
+    data = await state.get_data()
+    await query.message.edit_text(
+        text=(
+            f"<b>Перемещаем: </b>{data['delivery_type']}\n\n"
+            f"<b>Перевозим: </b>{cargo_type}\n\n"
+            "Что конкретно? Напишите"
+        ),
+        parse_mode=ParseMode.HTML,
     )
-    return CARGOCOMMENT_FROM
+    await state.set_state(TransferState.cargo_comment)
 
 
-def cargocomment_from(update, context):
-    context.user_data[CARGO_COMMENT] = update.message.text
-    update.effective_message.reply_text(
-        text='<b>Перемещаем: </b>{}\n\n'
-             '<b>Перевозим: </b>{}\n'
-             '<u>{}</u>\n\n'
-             'Откуда?'.format(context.user_data[DELIVERY_TYPE],
-                             context.user_data[CARGO_TYPE],
-                             context.user_data[CARGO_COMMENT]),
-        reply_markup=keyboard_from_list(np.concatenate((ADDITIONAL_DIST_POINTS_FROM,
-                                                        get_stores_open('store_name')), axis=None), 2),  # выбор точки
-        parse_mode=ParseMode.HTML
+@router.message(TransferState.cargo_comment)
+async def set_cargo_comment(message: Message, state: FSMContext) -> None:
+    """Save cargo comment and ask origin store."""
+
+    cargo_comment = message.text
+    await state.update_data(cargo_comment=cargo_comment)
+    data = await state.get_data()
+    from_points = np.concatenate(
+        (ADDITIONAL_DIST_POINTS_FROM, get_stores_open("store_name")),
+        axis=None,
     )
-    return FROM_TO
+    await message.answer(
+        text=(
+            f"<b>Перемещаем: </b>{data['delivery_type']}\n\n"
+            f"<b>Перевозим: </b>{data['cargo_type']}\n"
+            f"<u>{cargo_comment}</u>\n\n"
+            "Откуда?"
+        ),
+        parse_mode=ParseMode.HTML,
+        reply_markup=keyboard_from_list(from_points, 2),
+    )
+    await state.set_state(TransferState.from_store)
 
 
-def from_to(update, context):
-    query = update.callback_query
-    context.user_data[FROM] = query.data
+@router.callback_query(TransferState.from_store)
+async def set_from_store(query: CallbackQuery, state: FSMContext) -> None:
+    """Select origin store."""
 
-    to_points = np.concatenate((ADDITIONAL_DIST_POINTS_TO, get_stores_open('store_name')), axis=None)
-    index = np.where(to_points==context.user_data[FROM])[0]
+    from_store = query.data
+    await state.update_data(from_store=from_store)
+    data = await state.get_data()
+    to_points = np.concatenate(
+        (ADDITIONAL_DIST_POINTS_TO, get_stores_open("store_name")),
+        axis=None,
+    )
+    index = np.where(to_points == from_store)[0]
     if index.size > 0:
         to_points = np.delete(to_points, index)
 
-    query.edit_message_text(
-        text='<b>Перемещаем: </b>{}\n\n'
-             '<b>Перевозим: </b>{}\n'
-             '<u>{}</u>\n\n'
-             '<b>Откуда: </b>{}\n\n'
-             'Куда?'.format(context.user_data[DELIVERY_TYPE],
-                            context.user_data[CARGO_TYPE],
-                            context.user_data[CARGO_COMMENT],
-                            context.user_data[FROM]),
-        reply_markup=keyboard_from_list(to_points, 2),  # выбор точки
-        parse_mode=ParseMode.HTML
+    await query.message.edit_text(
+        text=(
+            f"<b>Перемещаем: </b>{data['delivery_type']}\n\n"
+            f"<b>Перевозим: </b>{data['cargo_type']}\n"
+            f"<u>{data['cargo_comment']}</u>\n\n"
+            f"<b>Откуда: </b>{from_store}\n\n"
+            "Куда?"
+        ),
+        parse_mode=ParseMode.HTML,
+        reply_markup=keyboard_from_list(to_points, 2),
     )
-    return TO_WRITE
+    await state.set_state(TransferState.to_store)
 
 
-def to_write(update, context):
-    query = update.callback_query
-    context.user_data[TO] = query.data
-    krsk_now = datetime.now(tz=pytz.timezone('Asia/Krasnoyarsk')).strftime("%d-%m-%Y %H:%M")
+@router.callback_query(TransferState.to_store)
+async def save_transfer(query: CallbackQuery, state: FSMContext) -> None:
+    """Save transfer data to Google Sheet."""
+
+    to_store = query.data
+    await state.update_data(to_store=to_store)
+    data = await state.get_data()
+
+    krsk_now = datetime.now(
+        tz=pytz.timezone("Asia/Krasnoyarsk")
+    ).strftime("%d-%m-%Y %H:%M")
     try:
-        insert_to_error_krsk_bot('Перемещения', [krsk_now, update.effective_user.id, update.effective_user.username,
-                                                 context.user_data[FROM], context.user_data[TO],
-                                                 context.user_data[DELIVERY_TYPE],
-                                                 context.user_data[CARGO_TYPE], context.user_data[CARGO_COMMENT]])
-        update.effective_message.reply_text(
-            text='<b>Перемещаем: </b>{}\n\n'
-                 '<b>Перевозим: </b>{}\n'
-                 '<u>{}</u>\n\n'
-                 '<b>Откуда: </b>{}\n\n'
-                 '<b>Куда: </b>{}'.format(context.user_data[DELIVERY_TYPE],
-                                            context.user_data[CARGO_TYPE],
-                                            context.user_data[CARGO_COMMENT],
-                                            context.user_data[FROM], context.user_data[TO]),
-            parse_mode=ParseMode.HTML
+        insert_to_error_krsk_bot(
+            "Перемещения",
+            [
+                krsk_now,
+                query.from_user.id,
+                query.from_user.username,
+                data["from_store"],
+                to_store,
+                data["delivery_type"],
+                data["cargo_type"],
+                data["cargo_comment"],
+            ],
         )
-
-    except Exception as e:
-        update.effective_message.reply_text(
-                text='Возникла ошибка записи, вернулись обратно',
-                reply_markup=keyboard_start(update.effective_message.chat.id, context)
+        await query.message.edit_text(
+            text=(
+                f"<b>Перемещаем: </b>{data['delivery_type']}\n\n"
+                f"<b>Перевозим: </b>{data['cargo_type']}\n"
+                f"<u>{data['cargo_comment']}</u>\n\n"
+                f"<b>Откуда: </b>{data['from_store']}\n\n"
+                f"<b>Куда: </b>{to_store}"
+            ),
+            parse_mode=ParseMode.HTML,
         )
-        context.bot.sendMessage(
-                chat_id=ERROR_ADMIN_ID,
-                text='Ошибка при внесении перемещения {}'.format(str(e))
+    except Exception as exc:
+        await query.message.answer(
+            text="Возникла ошибка записи, вернулись обратно",
+            reply_markup=await keyboard_start(query.message.chat.id, state),
+        )
+        await query.bot.send_message(
+            chat_id=ERROR_ADMIN_ID,
+            text=f"Ошибка при внесении перемещения {exc}",
         )
     finally:
-        update.effective_message.reply_text(
-            text='Вернулись в меню:',
-            reply_markup=keyboard_start(update.effective_chat.id, context),
+        await query.message.answer(
+            text="Вернулись в меню:",
+            reply_markup=await keyboard_start(query.message.chat.id, state),
         )
-        return ConversationHandler.END
+        await state.clear()
 
 
-def transfer_cancel(update, context):
-    update.message.reply_text(
-        text='Вернулись в меню:',
-        reply_markup=keyboard_start(update.message.chat_id, context),
+@router.message(Text(BUTTON_TRANSFER_CANCEL))
+async def transfer_cancel(message: Message, state: FSMContext) -> None:
+    """Cancel transfer conversation."""
+
+    await message.answer(
+        text="Вернулись в меню:",
+        reply_markup=await keyboard_start(message.chat.id, state),
     )
-    return ConversationHandler.END
+    await state.clear()
 
 
-def transfer(dispatcher):
-    dispatcher.add_handler(ConversationHandler(
-        entry_points=[MessageHandler(Filters.regex(BUTTON_TRANSFER), delivery_type, pass_user_data=True)],
+def conversation_transfer() -> Router:
+    """Return router with transfer handlers."""
 
-        states={
-            DT_W_CARGO_O: [CallbackQueryHandler(deliverytype_cargo, pass_user_data=True)],
-            CARGOTYPE_CARGOCOMMENT: [CallbackQueryHandler(cargotype_cargocomment, pass_user_data=True)],
-            CARGOCOMMENT_FROM: [MessageHandler(Filters.regex(BUTTON_TRANSFER_CANCEL), transfer_cancel, pass_user_data=True),
-                                MessageHandler(Filters.text, cargocomment_from, pass_user_data=True)],
-            FROM_TO: [CallbackQueryHandler(from_to, pass_user_data=True)],
-            TO_WRITE: [CallbackQueryHandler(to_write, pass_user_data=True)],
-
-        },
-        fallbacks=[MessageHandler(Filters.regex(BUTTON_TRANSFER_CANCEL), transfer_cancel, pass_user_data=True)],
-        conversation_timeout=CHAT_TIMEOUT
-    ))
+    return router
