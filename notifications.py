@@ -1,123 +1,179 @@
+"""Utility functions for sending notifications."""
+
+from __future__ import annotations
+
+import asyncio
 import logging
-from collections import namedtuple
-from datetime import datetime, timedelta
+import os
+from dataclasses import dataclass
+from datetime import date, datetime, time, timedelta
+from typing import List, Optional
 
 import pytz
+from aiogram import Bot
+from aiogram.types import CallbackQuery
 from dotenv import load_dotenv
-import os
-
-load_dotenv()
-TIME_ZONE = os.getenv('TIME_ZONE')
 
 from class_StartKeyboard import keyboard_start
+from keyboards import NOTIFICATION_SEPARATOR_SYMBOL, keyboard_remind
+from postgres import (
+    pg_get_send_notification_by_id,
+    pg_insert_send_notification,
+    pg_store,
+    pg_update_send_notification_press_button,
+    pgre_employee_dept_in_store,
+    pgre_get_employee_by_tel_id,
+)
 
-from keyboards import keyboard_accept_read, keyboard_remind, NOTIFICATION_SEPARATOR_SYMBOL
-from postgres import pgre_employee_dept_in_store, pg_insert_send_notification, pg_update_send_notification_press_button, \
-    pg_get_send_notification_by_id, pgre_get_employee_by_tel_id, pg_store, pgre_active_notifications
-
-NotifMessage = namedtuple('NotifMessage', {'id_department', 'id_notification', 'type', 'notification_text',
-                                           'notification_date', 'weekdays', 'stores', 'notification_time',
-                                           'minutes_to_do', 'department_name', 'department_code',
-                                           'group_id_telegram'})
-
-
-
-
-# errr = pgre_active_notifications(NotifMessage)
-# print(errr)
+load_dotenv()
+TIME_ZONE = os.getenv("TIME_ZONE")
 
 
+@dataclass
+class NotifMessage:
+    """Data required to send notification."""
 
-def time_to_utc(date_time: datetime, time_zone: str):
+    id_department: int
+    id_notification: int
+    type: str
+    notification_text: str
+    notification_date: date
+    weekdays: Optional[List[int]]
+    stores: List[int]
+    notification_time: time
+    minutes_to_do: Optional[int]
+    department_name: str
+    department_code: str
+    group_id_telegram: int
+
+
+
+
+def time_to_utc(date_time: datetime, time_zone: str) -> datetime:
+    """Return ``date_time`` converted from ``time_zone`` to UTC."""
+
     local = pytz.timezone(time_zone)
     local_dt = local.localize(date_time, is_dst=None)
-    utc_dt = local_dt.astimezone(pytz.utc)
-    return utc_dt
+    return local_dt.astimezone(pytz.utc)
 
 
-def check_notification(context):
-    n = context.job.context
-    # context_data = {
-    #     'id_send_notification': id_send_notification,
-    #     'notification_text': notification.notification_text,
-    #     'id_store': store,
-    #     'department_code': notification.department_code,
-    #     'group_id_telegram': notification.group_id_telegram,
-    #     'employee_tel_id': tel_id
-    # }
-    notification_send = pg_get_send_notification_by_id(n['id_send_notification'])
-    # [{'id_send_notification': 12, 'id_notification': 2, 'id_employee': 145,
-    #   'datetime_send': datetime.datetime(2022, 9, 3, 18, 51), 'datetime_press_button': None}]
-    if not notification_send:  # не нашли сообщения
+async def check_notification(bot: Bot, data: dict) -> None:
+    """Check that employee reacted to notification and remind if needed."""
+
+    notification_send = pg_get_send_notification_by_id(
+        data["id_send_notification"]
+    )
+    if not notification_send:
         return
 
-    if not notification_send['datetime_press_button']:
-        empl = pgre_get_employee_by_tel_id(tel_id=n['employee_tel_id'])
-        store_name = pg_store(id_store=n['id_store'])['store_name']
-        context.bot.sendMessage(chat_id=n['group_id_telegram'],
-                                text=f"📯 {store_name} {n['department_code']} \n"
-                                     f"сотрудник {empl['tel_username']} - {empl['tel_first_name']} - {empl['tel_last_name']}"
-                                     f" не сделано/не прочитано сообщение \n"
-                                     f"{n['notification_text']}",
-                                reply_markup=None)
+    if notification_send["datetime_press_button"]:
+        return
+
+    empl = pgre_get_employee_by_tel_id(tel_id=data["employee_tel_id"])
+    store_name = pg_store(id_store=data["id_store"])["store_name"]
+    text = (
+        f"📯 {store_name} {data['department_code']} \n"
+        f"сотрудник {empl['tel_username']} - {empl['tel_first_name']} - "
+        f"{empl['tel_last_name']}\n"
+        f"не сделано/не прочитано сообщение \n"
+        f"{data['notification_text']}"
+    )
+    await bot.send_message(chat_id=data["group_id_telegram"], text=text)
 
 
-def notification_in_store(context):
-    notification = NotifMessage(*context.job.context)
-    logging.info(f'Отправляем напоминания {notification}')
+async def _check_later(bot: Bot, data: dict, delay: int) -> None:
+    """Sleep ``delay`` seconds and run :func:`check_notification`."""
+
+    await asyncio.sleep(delay)
+    await check_notification(bot, data)
+
+
+async def notification_in_store(bot: Bot, notification: NotifMessage) -> None:
+    """Send notification to employees in specified stores."""
+
+    logging.info("Отправляем напоминания %s", notification)
+
     for store in notification.stores:
-        tel_id_list = pgre_employee_dept_in_store(id_dept=notification.id_department, id_store=store)
-        # tel_id_list = [5174907351, 189198380]
-        if not tel_id_list:  # нет сотрудников прикрепленных к точке
-            context.bot.sendMessage(chat_id=notification.group_id_telegram,
-                                    text=f"📯 Хотели отправить {notification.notification_text} \n"
-                                         f"но в {store} нет никого из {notification.department_name}")
+        tel_id_list = pgre_employee_dept_in_store(
+            id_dept=notification.id_department, id_store=store
+        )
+        if not tel_id_list:
+            await bot.send_message(
+                chat_id=notification.group_id_telegram,
+                text=(
+                    f"📯 Хотели отправить {notification.notification_text} \n"
+                    f"но в {store} нет никого из "
+                    f"{notification.department_name}"
+                ),
+            )
             return
 
         for tel_id in tel_id_list:
             try:
-                logging.info(f'Отправка напоминания {notification} в КИТе {store} для {tel_id}')
-                # создаем запись об отправке сообщения
-                id_send_notification = pg_insert_send_notification(id_notification=notification.id_notification,
-                                                                   employee_tlgr=tel_id,
-                                                                   time_zone=TIME_ZONE)
-                context.bot.sendMessage(chat_id=tel_id,
-                                        text=f"📨 {notification.notification_text} \n",
-                                        reply_markup=keyboard_remind(id_notification=id_send_notification))
-                # если поствлено время, через которое проверить заполнение
-                if notification.minutes_to_do:
-                    date_time = context.job.next_t + timedelta(minutes=notification.minutes_to_do)
+                logging.info(
+                    "Отправка напоминания %s в КИТе %s для %s",
+                    notification,
+                    store,
+                    tel_id,
+                )
+                id_send_notification = pg_insert_send_notification(
+                    id_notification=notification.id_notification,
+                    employee_tlgr=tel_id,
+                    time_zone=TIME_ZONE,
+                )
+                await bot.send_message(
+                    chat_id=tel_id,
+                    text=f"📨 {notification.notification_text} \n",
+                    reply_markup=keyboard_remind(
+                        id_notification=id_send_notification
+                    ),
+                )
 
+                if notification.minutes_to_do:
                     context_data = {
-                        'id_send_notification': id_send_notification,
-                        'notification_text': notification.notification_text,
-                        'id_store': store,
-                        'department_code': notification.department_code,
-                        'group_id_telegram': notification.group_id_telegram,
-                        'employee_tel_id': tel_id
+                        "id_send_notification": id_send_notification,
+                        "notification_text": notification.notification_text,
+                        "id_store": store,
+                        "department_code": notification.department_code,
+                        "group_id_telegram": notification.group_id_telegram,
+                        "employee_tel_id": tel_id,
                     }
 
-                    context.job_queue.run_once(callback=check_notification, when=date_time,
-                                               context=context_data)
+                    asyncio.create_task(
+                        _check_later(
+                            bot, context_data, notification.minutes_to_do * 60
+                        )
+                    )
             except Exception as e:
-                logging.error(f'ошибка отправки notification {store} -- {tel_id} - {notification} error - {str(e)}')
+                logging.error(
+                    "ошибка отправки notification %s -- %s - %s error - %s",
+                    store,
+                    tel_id,
+                    notification,
+                    str(e),
+                )
 
 
-def mark_read_notification(update, context) -> None:
-    query = update.callback_query
+async def mark_read_notification(query: CallbackQuery, bot: Bot) -> None:
+    """Mark notification as read when user presses the button."""
+
     id_notification = query.data.split(NOTIFICATION_SEPARATOR_SYMBOL)[0]
-    query.answer(text='📭 прочитано')
+    await query.answer(text="📭 прочитано")
     try:
-        # отмечаем, что нажали кнопку
-        pg_update_send_notification_press_button(id_send_notification=int(id_notification), time_zone=TIME_ZONE)
-        query.edit_message_text(
-            text='📭 сделано|прочтено:\n' + query.message.text,
-
+        pg_update_send_notification_press_button(
+            id_send_notification=int(id_notification), time_zone=TIME_ZONE
         )
-        update.effective_message.reply_text(
-            text='Вернулись в меню',
-            reply_markup=keyboard_start(update.effective_message.chat_id, context)
+        await query.message.edit_text(
+            text="📭 сделано|прочтено:\n" + query.message.text
+        )
+        await bot.send_message(
+            chat_id=query.message.chat.id,
+            text="Вернулись в меню",
+            reply_markup=keyboard_start(query.message.chat.id, None),
         )
     except Exception as e:
-        logging.error(f'ошибка mark_read_notification {query.data}  error - {str(e)}')
-
+        logging.error(
+            "ошибка mark_read_notification %s  error - %s",
+            query.data,
+            str(e),
+        )
