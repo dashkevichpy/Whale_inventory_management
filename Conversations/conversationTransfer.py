@@ -26,6 +26,7 @@ from postgres import get_stores_open
 load_dotenv()
 CHAT_TIMEOUT = int(os.getenv("CHAT_TIMEOUT"))
 ERROR_ADMIN_ID = os.getenv("ERROR_ADMIN_ID")
+TIME_ZONE = os.getenv("TIME_ZONE", "Asia/Krasnoyarsk")
 
 router = Router()
 
@@ -165,9 +166,8 @@ async def save_transfer(query: CallbackQuery, state: FSMContext) -> None:
     await state.update_data(to_store=to_store)
     data = await state.get_data()
 
-    krsk_now = datetime.now(
-        tz=pytz.timezone("Asia/Krasnoyarsk")
-    ).strftime("%d-%m-%Y %H:%M")
+
+    krsk_now = datetime.now(tz=pytz.timezone(TIME_ZONE)).strftime("%d-%m-%Y %H:%M")
     try:
         insert_to_error_krsk_bot(
             "Перемещения",

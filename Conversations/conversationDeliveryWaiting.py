@@ -28,6 +28,7 @@ from keyboards import (
 from postgres import query_postgre
 
 load_dotenv()
+TIME_ZONE = os.getenv("TIME_ZONE", "Asia/Krasnoyarsk")
 
 router = Router()
 
@@ -137,7 +138,7 @@ async def callback_keyboard_processing(query: CallbackQuery, state: FSMContext) 
         """
         query_postgre(q_update)
         q_entry = f"""
-            SET TIMEZONE='posix/Asia/Krasnoyarsk';
+            SET TIMEZONE='posix/{TIME_ZONE}';
             INSERT INTO wait_entry (date_time, wait_min, id_wait_session)
             VALUES (date_trunc('minute', now()) ,{now_wait},{id_wait_session});
         """
@@ -147,7 +148,7 @@ async def callback_keyboard_processing(query: CallbackQuery, state: FSMContext) 
     elif callback_data.split()[0] == MARKER_WAIT_DELIVERY_WAIT:
         store_name = callback_data.split()[1]
         q_close = f"""
-            SET TIMEZONE='posix/Asia/Krasnoyarsk';
+            SET TIMEZONE='posix/{TIME_ZONE}';
             UPDATE wait_session
             SET end_wait = date_trunc('minute', now()),
                 duration_wait = date_trunc('minute', (NOW() - begin_wait)),
@@ -159,7 +160,7 @@ async def callback_keyboard_processing(query: CallbackQuery, state: FSMContext) 
         """
         id_wait_session = np.array(query_postgre(q_close))[0][0]
         q_entry = f"""
-            SET TIMEZONE='posix/Asia/Krasnoyarsk';
+            SET TIMEZONE='posix/{TIME_ZONE}';
             INSERT INTO wait_entry (date_time, wait_min, id_wait_session) VALUES
             (date_trunc('minute', now()) ,0,{id_wait_session});
         """
@@ -178,7 +179,7 @@ async def callback_keyboard_processing(query: CallbackQuery, state: FSMContext) 
             return
 
         q_new_session = f"""
-            SET TIMEZONE='posix/Asia/Krasnoyarsk';
+            SET TIMEZONE='posix/{TIME_ZONE}';
             INSERT INTO wait_session (begin_wait, id_store, max_wait, product_name, now_wait)
             SELECT date_trunc('minute', now()), store.id_store, {wait_min}, '{PRODUCT_NAME_WAITING[2]}',{wait_min}
             FROM store
@@ -187,7 +188,7 @@ async def callback_keyboard_processing(query: CallbackQuery, state: FSMContext) 
         """
         id_wait_session = np.array(query_postgre(q_new_session))[0][0]
         q_entry = f"""
-            SET TIMEZONE='posix/Asia/Krasnoyarsk';
+            SET TIMEZONE='posix/{TIME_ZONE}';
             INSERT INTO wait_entry (date_time, wait_min, id_wait_session) VALUES
             (date_trunc('minute', now()) ,{wait_min},{id_wait_session});
         """
@@ -266,14 +267,14 @@ async def input_delivery_time(message: Message, state: FSMContext) -> None:
         """
         query_postgre(q_update)
         q_entry = f"""
-            SET TIMEZONE='posix/Asia/Krasnoyarsk';
+            SET TIMEZONE='posix/{TIME_ZONE}';
             INSERT INTO wait_entry (date_time, wait_min, id_wait_session)
             VALUES (date_trunc('minute', now()) ,{now_wait},{id_wait_session});
         """
         query_postgre(q_entry)
     else:
         q_new_session = f"""
-            SET TIMEZONE='posix/Asia/Krasnoyarsk';
+            SET TIMEZONE='posix/{TIME_ZONE}';
             INSERT INTO wait_session (begin_wait, id_store, max_wait, product_name, now_wait)
             SELECT date_trunc('minute', now()), store.id_store, {now_wait}, '{PRODUCT_NAME_WAITING[2]}',{now_wait}
             FROM store
@@ -282,7 +283,7 @@ async def input_delivery_time(message: Message, state: FSMContext) -> None:
         """
         id_wait_session = np.array(query_postgre(q_new_session))[0][0]
         q_entry = f"""
-            SET TIMEZONE='posix/Asia/Krasnoyarsk';
+            SET TIMEZONE='posix/{TIME_ZONE}';
             INSERT INTO wait_entry (date_time, wait_min, id_wait_session) VALUES
             (date_trunc('minute', now()) ,{now_wait},{id_wait_session});
         """

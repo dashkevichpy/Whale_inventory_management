@@ -9,13 +9,14 @@ import pytz
 from dotenv import load_dotenv
 
 load_dotenv()
-GS_BOT_ADMIN_TOKEN = os.getenv('GS_BOT_ADMIN_TOKEN')
-GS_BOT_ENTRY_TOKEN = os.getenv('GS_BOT_ENTRY_TOKEN')
-LINK_GS_JSON = os.getenv('LINK_GS_JSON')
-ERRORS_POSITIONS_SHEET_NAME = os.getenv('ERRORS_POSITIONS_SHEET_NAME')
-GS_BOT_STOP_LIST_TOKEN = os.getenv('GS_BOT_STOP_LIST_TOKEN')
-GS_AVERAGE_CHECK = os.getenv('GS_AVERAGE_CHECK')
-AVERAGE_CHECK_SHEET_NAME = os.getenv('AVERAGE_CHECK_SHEET_NAME')
+GS_BOT_ADMIN_TOKEN = os.getenv("GS_BOT_ADMIN_TOKEN")
+GS_BOT_ENTRY_TOKEN = os.getenv("GS_BOT_ENTRY_TOKEN")
+LINK_GS_JSON = os.getenv("LINK_GS_JSON")
+ERRORS_POSITIONS_SHEET_NAME = os.getenv("ERRORS_POSITIONS_SHEET_NAME")
+GS_BOT_STOP_LIST_TOKEN = os.getenv("GS_BOT_STOP_LIST_TOKEN")
+GS_AVERAGE_CHECK = os.getenv("GS_AVERAGE_CHECK")
+AVERAGE_CHECK_SHEET_NAME = os.getenv("AVERAGE_CHECK_SHEET_NAME")
+TIME_ZONE = os.getenv("TIME_ZONE", "Asia/Krasnoyarsk")
 
 logging.basicConfig(level=logging.INFO, filename='app.log', filemode='w',
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -105,8 +106,12 @@ def get_list_of_errors_by_positions(position):
     return list_of_errors_by_positions
 
 
-def insert_entry_breakages_gs(id_user, which_whale, what_broken, critical, comment, sheet):
-    krsk_now = datetime.now(tz=pytz.timezone('Asia/Krasnoyarsk'))
+def insert_entry_breakages_gs(
+    id_user, which_whale, what_broken, critical, comment, sheet
+) -> None:
+    """Write breakage entry to Google Sheet."""
+
+    krsk_now = datetime.now(tz=pytz.timezone(TIME_ZONE))
     entry_sheet = gs.open_by_key(GS_BOT_ENTRY_TOKEN)
     worksheet = entry_sheet.worksheet_by_title(sheet)
     worksheet.insert_rows(worksheet.rows, values=[krsk_now.strftime("%d-%m-%Y %H:%M"),
@@ -120,8 +125,12 @@ def insert_entry_breakages_gs(id_user, which_whale, what_broken, critical, comme
     gc.collect()
 
 
-def insert_entry_errors_gs(id_user, which_whale, when, error_type, comment, sheet):
-    krsk_now = datetime.now(tz=pytz.timezone('Asia/Krasnoyarsk'))
+def insert_entry_errors_gs(
+    id_user, which_whale, when, error_type, comment, sheet
+) -> None:
+    """Write error entry to Google Sheet."""
+
+    krsk_now = datetime.now(tz=pytz.timezone(TIME_ZONE))
     entry_sheet = gs.open_by_key(GS_BOT_ENTRY_TOKEN)
     worksheet = entry_sheet.worksheet_by_title(sheet)
     worksheet.refresh()

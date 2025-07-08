@@ -1,3 +1,6 @@
+import logging
+import os
+
 import pandas as pd
 import psycopg2
 from psycopg2.extras import DictCursor
@@ -7,9 +10,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.pool import NullPool
 
 from dotenv import load_dotenv
-import os
 
 load_dotenv()
+TIME_ZONE = os.getenv("TIME_ZONE", "Asia/Krasnoyarsk")
+TEST_MODE = os.getenv("TEST_MODE", "False").lower() == "true"
 
 DBNAME_PG = os.getenv('DBNAME_PG')
 USER_PG = os.getenv('USER_PG')
@@ -20,86 +24,73 @@ PORT_PG = os.getenv('PORT_PG')
 
 def append_df_pgre(df: pd.DataFrame, table_name: str, index: bool, index_label):
     """Append :class:`pandas.DataFrame` to PostgreSQL table."""
-    conn_string = 'postgresql://' + USER_PG + ':' + PASSWORD_PG + '@' + HOST_PG + ':' + PORT_PG + '/' + DBNAME_PG
+
+    if TEST_MODE:
+        logging.info("TEST_MODE: skip append to %s", table_name)
+        logging.debug(df.to_string())
+        return
+
+    conn_string = (
+        "postgresql://" + USER_PG + ":" + PASSWORD_PG + "@" + HOST_PG + ":" + PORT_PG + "/" + DBNAME_PG
+    )
     db = create_engine(conn_string, poolclass=NullPool)
     conn = db.connect()
-    df.to_sql(table_name, con=conn, if_exists='append', index=index, index_label=index_label)
+    df.to_sql(table_name, con=conn, if_exists="append", index=index, index_label=index_label)
     conn.close()
     db.dispose()
 
 
 def query_postgre(query: str):
     """Execute SQL query and return all fetched rows."""
-    conn = psycopg2.connect(dbname=DBNAME_PG, user=USER_PG, password=PASSWORD_PG, host=HOST_PG, port=PORT_PG)
+
+    logging.debug("Postgre query: %s", query)
+    if TEST_MODE and not query.strip().lower().startswith("select"):
+        logging.info("TEST_MODE: skip query execution")
+        return None
+
+    conn = psycopg2.connect(
+        dbname=DBNAME_PG, user=USER_PG, password=PASSWORD_PG, host=HOST_PG, port=PORT_PG
+    )
     try:
         with conn:
             with conn.cursor() as cur:
                 cur.execute(query)
                 if cur.description:
                     full_fetch = cur.fetchall()
+                    logging.debug("Result: %s", full_fetch)
                     return full_fetch
     except Exception as e:
-        print(e)
+        logging.error(e)
     finally:
         conn.close()
 
 
 def query_postgre_list(query: str):
     """Return list with first column of each row for given query."""
-    conn = psycopg2.connect(dbname=DBNAME_PG, user=USER_PG, password=PASSWORD_PG, host=HOST_PG, port=PORT_PG)
-    try:
-        with conn:
-            with conn.cursor() as cur:
-                cur.execute(query)
-                if cur.description:
-                    res = []
-                    full_fetch = cur.fetchall()
-                    for row in full_fetch:
-                        res.append(row[0])
-                    return res
-    except Exception as e:
-        print('ошибка БД query_postgre - c запросом:', str, e)
-    finally:
-        conn.close()
+
+    result = query_postgre(query)
+    if not result:
+        return []
+    return [row[0] for row in result]
 
 
 
 def query_postgre_one_value(query: str):
     """Return single value from query or ``None`` if no data."""
-    conn = psycopg2.connect(dbname=DBNAME_PG, user=USER_PG, password=PASSWORD_PG, host=HOST_PG, port=PORT_PG)
-    try:
-        with conn:
-            with conn.cursor() as cur:
-                cur.execute(query)
-                if cur.description:
-                    full_fetch = cur.fetchall()
-                    if full_fetch:
-                        return full_fetch[0][0]
-                    else:
-                        return None
-    except Exception as e:
-        print('ошибка БД query_postgre - c запросом:', str, e)
-    finally:
-        conn.close()
+
+    result = query_postgre(query)
+    if result:
+        return result[0][0]
+    return None
 
 
 def query_postgre_factory(query: str):
     """Return query result as list of dictionaries."""
-    conn = psycopg2.connect(dbname=DBNAME_PG, user=USER_PG, password=PASSWORD_PG, host=HOST_PG, port=PORT_PG)
-    try:
-        with conn:
-            with conn.cursor(cursor_factory=DictCursor) as cur:
-                cur.execute(query)
-                if cur.description:
-                    full_fetch = cur.fetchall()
-                    res = []
-                    for row in full_fetch:
-                        res.append(dict(row))
-                    return res
-    except Exception as e:
-        print('ошибка БД query_postgre - c запросом:', str, e)
-    finally:
-        conn.close()
+
+    result = query_postgre(query)
+    if not result:
+        return []
+    return [dict(row) for row in result]
 
 
 def view_all_stoplist():
@@ -162,7 +153,7 @@ def del_emloyee_assignment():
 def end_day_wait():
     """Close all open wait sessions and create zero entries."""
     query_db = '''
-            SET TIMEZONE='posix/Asia/Krasnoyarsk';
+            SET TIMEZONE='posix/{TIME_ZONE}';
             UPDATE wait_session
             SET end_wait = date_trunc('minute', now()), duration_wait = date_trunc('minute', (now() - begin_wait))
             WHERE end_wait is NULL
@@ -171,7 +162,7 @@ def end_day_wait():
     open_sessions = np.array(query_postgre(query_db)).flatten()
     for i in open_sessions:
         query_db = '''
-                    SET TIMEZONE='posix/Asia/Krasnoyarsk';
+                    SET TIMEZONE='posix/{TIME_ZONE}';
                     INSERT INTO wait_entry (date_time,wait_min,id_wait_session)
                     VALUES (date_trunc('minute', now()), 0, {})
                     '''.format(i)
@@ -415,7 +406,7 @@ def pg_get_nomenclature_to_stop_list(id_store: int) -> list:
 def pg_add_stop_list(id_store: int, nomenclature_name: str) -> None:
     """Add nomenclature item to stop list for store."""
     query = '''
-            SET TIMEZONE='posix/Asia/Krasnoyarsk';
+            SET TIMEZONE='posix/{TIME_ZONE}';
             INSERT INTO stop_list (id_store, iiko_code, date_start_stop)
             SELECT {id_store}, nomenclature.iiko_code,  date_trunc('minute', now())
             FROM nomenclature
@@ -458,7 +449,7 @@ def pg_remove_stop_list(id_store: int, nomenclature_name: str) -> None:
 def end_day_stop():
     """Finish all active stop list records."""
     query = '''
-                SET TIMEZONE='posix/Asia/Krasnoyarsk';
+                SET TIMEZONE='posix/{TIME_ZONE}';
                 UPDATE stop_list
                 SET date_end_stop = date_trunc('minute', now())
                 WHERE date_end_stop is NULL            

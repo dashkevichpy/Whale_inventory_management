@@ -24,6 +24,7 @@ from keyboards import (
 from postgres import query_postgre
 
 load_dotenv()
+TIME_ZONE = os.getenv("TIME_ZONE", "Asia/Krasnoyarsk")
 ERROR_ADMIN_ID = os.getenv("ERROR_ADMIN_ID")
 TG_GROUP_NAMES = eval(os.getenv("TG_GROUP_NAMES"))
 OPERATION_BM = os.getenv("OPERATION_BM")
@@ -125,7 +126,7 @@ async def write_wait(query: CallbackQuery, state: FSMContext) -> None:
                 if wait_min == BUTTON_REMOVE_WAIT:
                     text = f"{BUTTON_REMOVE_WAIT} {product} в {data['what_whale']}"
                     q_close_wait_session = f"""
-                        SET TIMEZONE='posix/Asia/Krasnoyarsk';
+                        SET TIMEZONE='posix/{TIME_ZONE}';
                         UPDATE wait_session
                         SET end_wait = date_trunc('minute', now()),
                             duration_wait = date_trunc('minute', (NOW() - begin_wait)),
@@ -134,7 +135,7 @@ async def write_wait(query: CallbackQuery, state: FSMContext) -> None:
                     """
                     query_postgre(q_close_wait_session)
                     q_wait_entry = f"""
-                        SET TIMEZONE='posix/Asia/Krasnoyarsk';
+                        SET TIMEZONE='posix/{TIME_ZONE}';
                         INSERT INTO wait_entry (date_time, wait_min, id_wait_session) VALUES
                         (date_trunc('minute', now()) ,{0},{id_wait_session});
                     """
@@ -152,7 +153,7 @@ async def write_wait(query: CallbackQuery, state: FSMContext) -> None:
                     """
                     query_postgre(q_update_session)
                     q_wait_entry = f"""
-                        SET TIMEZONE='posix/Asia/Krasnoyarsk';
+                        SET TIMEZONE='posix/{TIME_ZONE}';
                         INSERT INTO wait_entry (date_time, wait_min, id_wait_session)
                         VALUES (date_trunc('minute', now()) ,{wait_min},{id_wait_session});
                     """
@@ -162,7 +163,7 @@ async def write_wait(query: CallbackQuery, state: FSMContext) -> None:
     if len(open_sessions) == 0 or id_wait_session == 0:
         text = f"Поставили ожидание {product} на {wait_min} {data['what_whale']}"
         q_new_wait_session = f"""
-            SET TIMEZONE='posix/Asia/Krasnoyarsk';
+            SET TIMEZONE='posix/{TIME_ZONE}';
             INSERT INTO wait_session (begin_wait, id_store, max_wait, product_name, now_wait)
             SELECT date_trunc('minute', now()), store.id_store, {wait_min}, '{product}',{wait_min}
             FROM store
@@ -171,7 +172,7 @@ async def write_wait(query: CallbackQuery, state: FSMContext) -> None:
         """
         id_wait_session = np.array(query_postgre(q_new_wait_session))[0, 0]
         q_wait_entry = f"""
-            SET TIMEZONE='posix/Asia/Krasnoyarsk';
+            SET TIMEZONE='posix/{TIME_ZONE}';
             INSERT INTO wait_entry (date_time, wait_min, id_wait_session) VALUES
             (date_trunc('minute', now()) ,{wait_min},{id_wait_session});
         """
