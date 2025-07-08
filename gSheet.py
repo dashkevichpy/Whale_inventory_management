@@ -1,10 +1,12 @@
 import gc
-
-import pygsheets
-import numpy as np
-
-from dotenv import load_dotenv
+import logging
 import os
+from datetime import datetime
+
+import numpy as np
+import pygsheets
+import pytz
+from dotenv import load_dotenv
 
 load_dotenv()
 GS_BOT_ADMIN_TOKEN = os.getenv('GS_BOT_ADMIN_TOKEN')
@@ -14,18 +16,11 @@ ERRORS_POSITIONS_SHEET_NAME = os.getenv('ERRORS_POSITIONS_SHEET_NAME')
 GS_BOT_STOP_LIST_TOKEN = os.getenv('GS_BOT_STOP_LIST_TOKEN')
 GS_AVERAGE_CHECK = os.getenv('GS_AVERAGE_CHECK')
 AVERAGE_CHECK_SHEET_NAME = os.getenv('AVERAGE_CHECK_SHEET_NAME')
-from datetime import datetime
-import pytz
-import logging
 
 logging.basicConfig(level=logging.INFO, filename='app.log', filemode='w',
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
 gs = pygsheets.authorize(service_file=LINK_GS_JSON)
-
-# выгрузка sheets для STOP
-# ws_stop = gs.open_by_key(GS_BOT_STOP_LIST_TOKEN)
-# ws_admin_stop = gs.open_by_key(GS_BOT_ADMIN_TOKEN)
 
 
 def open_sheet(gs_token: str, ws_name: str) -> pygsheets.worksheet.Worksheet:
@@ -111,7 +106,6 @@ def get_list_of_errors_by_positions(position):
 
 
 def insert_entry_breakages_gs(id_user, which_whale, what_broken, critical, comment, sheet):
-    # krsk_now = datetime.utcnow() + timedelta(hours=7)
     krsk_now = datetime.now(tz=pytz.timezone('Asia/Krasnoyarsk'))
     entry_sheet = gs.open_by_key(GS_BOT_ENTRY_TOKEN)
     worksheet = entry_sheet.worksheet_by_title(sheet)
@@ -124,8 +118,6 @@ def insert_entry_breakages_gs(id_user, which_whale, what_broken, critical, comme
                           inherit=True)
     del worksheet
     gc.collect()
-    # cells = worksheet.get_row(worksheet.rows, include_tailing_empty=False)
-    # return cells
 
 
 def insert_entry_errors_gs(id_user, which_whale, when, error_type, comment, sheet):
@@ -146,7 +138,6 @@ def insert_entry_errors_gs(id_user, which_whale, when, error_type, comment, shee
 def get_average_check_plan(date: str):
 
     date_col, store_col = 0, 1
-    target_col = [4, 5, 6]
     wb = gs.open_by_key(GS_AVERAGE_CHECK)
     ws = wb.worksheet_by_title(AVERAGE_CHECK_SHEET_NAME)
 
@@ -155,4 +146,3 @@ def get_average_check_plan(date: str):
     del ws
     gc.collect()
     return  filter_date
-
