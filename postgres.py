@@ -1,5 +1,6 @@
 import logging
 import os
+import re
 
 import pandas as pd
 import psycopg2
@@ -41,12 +42,18 @@ def append_df_pgre(df: pd.DataFrame, table_name: str, index: bool, index_label):
 
 
 def query_postgre(query: str):
-    """Execute SQL query and return all fetched rows."""
+    """Execute SQL query and return all fetched rows.
+
+    In testing mode only ``SELECT`` or ``WITH`` statements are executed. Any
+    other query types are skipped to avoid unwanted database modifications.
+    """
 
     logging.debug("Postgre query: %s", query)
-    if TEST_MODE and not query.strip().lower().startswith("select"):
-        logging.info("TEST_MODE: skip query execution")
-        return None
+    if TEST_MODE:
+        first_word = re.search(r"\b(\w+)\b", query)
+        if first_word and first_word.group(1).lower() not in {"select", "with"}:
+            logging.info("TEST_MODE: skip query execution")
+            return None
 
     conn = psycopg2.connect(
         dbname=DBNAME_PG, user=USER_PG, password=PASSWORD_PG, host=HOST_PG, port=PORT_PG
