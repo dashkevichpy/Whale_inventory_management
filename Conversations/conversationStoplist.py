@@ -61,9 +61,22 @@ class StopAction(Enum):
 def keyboard_stop_actions(has_remove: bool) -> InlineKeyboardMarkup:
     """Return keyboard with available stop list actions."""
 
-    keyboard = [[InlineKeyboardButton(StopAction.ADD.text, callback_data=StopAction.ADD.callback)]]
+    keyboard = [
+        [
+            InlineKeyboardButton(
+                text=StopAction.ADD.text, callback_data=StopAction.ADD.callback
+            )
+        ]
+    ]
     if has_remove:
-        keyboard.append([InlineKeyboardButton(StopAction.REMOVE.text, callback_data=StopAction.REMOVE.callback)])
+        keyboard.append(
+            [
+                InlineKeyboardButton(
+                    text=StopAction.REMOVE.text,
+                    callback_data=StopAction.REMOVE.callback,
+                )
+            ]
+        )
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
 

@@ -25,34 +25,55 @@ class KeyboardStart(Enum):
     """Reply keyboard layouts for different departments."""
 
     BM = [
-        [KeyboardButton(BUTTON_BREAK_TITLE), KeyboardButton(BUTTON_ERROR_TITLE)],
-        [KeyboardButton(BUTTON_STOCKS)],
+        [
+            KeyboardButton(text=BUTTON_BREAK_TITLE),
+            KeyboardButton(text=BUTTON_ERROR_TITLE),
+        ],
+        [KeyboardButton(text=BUTTON_STOCKS)],
     ]
 
     CASHIER = [
-        [KeyboardButton(BUTTON_BREAK_TITLE), KeyboardButton(BUTTON_ERROR_TITLE)],
-        [KeyboardButton(BUTTON_WAIT_TITLE), KeyboardButton(BUTTON_TRANSFER)],
-        [KeyboardButton(BUTTON_STOCKS), KeyboardButton(BUTTON_STOP_START)],
+        [
+            KeyboardButton(text=BUTTON_BREAK_TITLE),
+            KeyboardButton(text=BUTTON_ERROR_TITLE),
+        ],
+        [KeyboardButton(text=BUTTON_WAIT_TITLE), KeyboardButton(text=BUTTON_TRANSFER)],
+        [KeyboardButton(text=BUTTON_STOCKS), KeyboardButton(text=BUTTON_STOP_START)],
     ]
 
     OPERATOR = [
-        [KeyboardButton(BUTTON_BREAK_TITLE), KeyboardButton(BUTTON_ERROR_TITLE)],
-        [KeyboardButton(BUTTON_DELIVERY_TIME_WATCH), KeyboardButton(BUTTON_DELIVERY_WAIT)],
-        [KeyboardButton(BUTTON_TRANSFER)],
+        [
+            KeyboardButton(text=BUTTON_BREAK_TITLE),
+            KeyboardButton(text=BUTTON_ERROR_TITLE),
+        ],
+        [
+            KeyboardButton(text=BUTTON_DELIVERY_TIME_WATCH),
+            KeyboardButton(text=BUTTON_DELIVERY_WAIT),
+        ],
+        [KeyboardButton(text=BUTTON_TRANSFER)],
     ]
 
     PLANT = [
-        [KeyboardButton(BUTTON_BREAK_TITLE), KeyboardButton(BUTTON_ERROR_TITLE)],
+        [
+            KeyboardButton(text=BUTTON_BREAK_TITLE),
+            KeyboardButton(text=BUTTON_ERROR_TITLE),
+        ],
     ]
 
     DEFAULT = [
-        [KeyboardButton(BUTTON_BREAK_TITLE), KeyboardButton(BUTTON_ERROR_TITLE)],
-        [KeyboardButton(BUTTON_WHAT_WHALE)],
+        [
+            KeyboardButton(text=BUTTON_BREAK_TITLE),
+            KeyboardButton(text=BUTTON_ERROR_TITLE),
+        ],
+        [KeyboardButton(text=BUTTON_WHAT_WHALE)],
     ]
 
     NEW_EMPLOYEE = [
-        [KeyboardButton(BUTTON_BREAK_TITLE), KeyboardButton(BUTTON_ERROR_TITLE)],
-        [KeyboardButton(BUTTON_WHAT_WHALE)],
+        [
+            KeyboardButton(text=BUTTON_BREAK_TITLE),
+            KeyboardButton(text=BUTTON_ERROR_TITLE),
+        ],
+        [KeyboardButton(text=BUTTON_WHAT_WHALE)],
     ]
 
 
@@ -85,6 +106,6 @@ async def keyboard_start(
     else:
         keyboard = KeyboardStart.DEFAULT.value
         if not pg_get_position_by_id(tel_id):
-            keyboard = [[KeyboardButton(BUTTON_REGISTER)]]
+                        keyboard = [[KeyboardButton(text=BUTTON_REGISTER)]]
 
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)

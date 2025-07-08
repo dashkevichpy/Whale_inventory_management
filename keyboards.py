@@ -78,7 +78,7 @@ KEYBOARD_STOP_DEL_CONT_TITLES = {
 def keyboard_cancel_wait():
     """Return keyboard with a cancel button for waiting."""
 
-    keyboard = [[KeyboardButton(BUTTON_WAIT_CANCEL)]]
+    keyboard = [[KeyboardButton(text=BUTTON_WAIT_CANCEL)]]
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
 
 # ------------------------choose whale--------------------------------
@@ -86,7 +86,7 @@ def keyboard_cancel_wait():
 def keyboard_cancel_choose_whale():
     """Return keyboard with button to cancel whale choosing."""
 
-    keyboard = [[KeyboardButton(BUTTON_CHOOSE_WHALE_CANCEL)]]
+    keyboard = [[KeyboardButton(text=BUTTON_CHOOSE_WHALE_CANCEL)]]
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
 
 
@@ -99,7 +99,10 @@ def keyboard_yes_no() -> InlineKeyboardMarkup:
     """Return inline keyboard with Yes and No buttons."""
 
     keyboard = [
-        [InlineKeyboardButton("Да", callback_data="Yes"), InlineKeyboardButton("Нет", callback_data="No")]
+        [
+            InlineKeyboardButton(text="Да", callback_data="Yes"),
+            InlineKeyboardButton(text="Нет", callback_data="No"),
+        ]
     ]
     return InlineKeyboardMarkup(keyboard)
 
@@ -118,7 +121,9 @@ def keyboard_from_column(sheet_name, col_number: int, start: int, finish: int, c
 
     for cell_value in values_from_cell:
         rt = int(count / col_amount)
-        keyboard[int(rt)].append(InlineKeyboardButton(cell_value, callback_data=cell_value))
+        keyboard[int(rt)].append(
+            InlineKeyboardButton(text=cell_value, callback_data=cell_value)
+        )
         count += 1
 
     return InlineKeyboardMarkup(keyboard)
@@ -128,7 +133,7 @@ def keyboard_from_column(sheet_name, col_number: int, start: int, finish: int, c
 def keyboard_accept_read() -> InlineKeyboardMarkup:
     """Return keyboard with single confirm button."""
 
-    keyboard = [[InlineKeyboardButton("Confirm", callback_data="accept")]]
+    keyboard = [[InlineKeyboardButton(text="Confirm", callback_data="accept")]]
     return InlineKeyboardMarkup(keyboard)
 
 # dict_test = [{'id_department': 2, 'department_name': 'Бургермейкер'}, {'id_department': 1, 'department_name': 'Фабрика'}]
@@ -139,7 +144,11 @@ def keyboard_from_dict(
     """Return keyboard built from dictionary list."""
 
     keyboard = [[] for _ in range(len(list_of_dict))]
-    [keyboard[int(counter / col_amount)].append(InlineKeyboardButton(x[button_title], callback_data=x[callback_title])) for counter, x in
+    [
+        keyboard[int(counter / col_amount)].append(
+            InlineKeyboardButton(text=x[button_title], callback_data=x[callback_title])
+        )
+        for counter, x in
      enumerate(list_of_dict)]
     return InlineKeyboardMarkup(keyboard)
 
@@ -157,7 +166,9 @@ def keyboard_from_list(list_values, col_amount: int):
 
     for cell_value in list_values:
         rt = int(count / col_amount)
-        keyboard[int(rt)].append(InlineKeyboardButton(cell_value, callback_data=cell_value))
+        keyboard[int(rt)].append(
+            InlineKeyboardButton(text=cell_value, callback_data=cell_value)
+        )
         count += 1
 
     return InlineKeyboardMarkup(keyboard)
@@ -173,7 +184,12 @@ def keyboard_from_enum(enum_obj, col_amount: int):
     """
 
     keyboard = [[] for _ in enum_obj]
-    [keyboard[int(counter / col_amount)].append(InlineKeyboardButton(e.value, callback_data=e.name)) for counter, e in enumerate(enum_obj)]
+    [
+        keyboard[int(counter / col_amount)].append(
+            InlineKeyboardButton(text=e.value, callback_data=e.name)
+        )
+        for counter, e in enumerate(enum_obj)
+    ]
     return InlineKeyboardMarkup(keyboard)
 
 
@@ -185,7 +201,7 @@ def keyboard_cancel_error():
     старотвая стационарная клавиатура
     :return:
     """
-    keyboard = [[KeyboardButton(BUTTON_ERROR_CANCEL)]]
+    keyboard = [[KeyboardButton(text=BUTTON_ERROR_CANCEL)]]
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
 
 
@@ -197,7 +213,7 @@ def keyboard_position() -> InlineKeyboardMarkup:
     counter_keyboard = 0
     for post in get_error_postions_from_gs():
         keyboard[int(counter_keyboard / 2)].append(
-            InlineKeyboardButton(post, callback_data=post)
+            InlineKeyboardButton(text=post, callback_data=post)
         )
         counter_keyboard += 1
 
@@ -212,7 +228,7 @@ def keyboard_cancel_breakage():
     старотвая стационарная клавиатура
     :return:
     """
-    keyboard = [[KeyboardButton(BUTTON_BREAK_CANCEL)]]
+    keyboard = [[KeyboardButton(text=BUTTON_BREAK_CANCEL)]]
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
 
 
@@ -220,8 +236,10 @@ def keyboard_critical() -> InlineKeyboardMarkup:
     """Return keyboard to select breakage criticality."""
 
     keyboard = [
-        [InlineKeyboardButton("Критична", callback_data="Критична")],
-        [InlineKeyboardButton("⏳ Поломка некритична", callback_data="Некритическая")],
+        [InlineKeyboardButton(text="Критична", callback_data="Критична")],
+        [
+            InlineKeyboardButton(text="⏳ Поломка некритична", callback_data="Некритическая")
+        ],
     ]
     return InlineKeyboardMarkup(keyboard)
 
@@ -245,7 +263,7 @@ def keyboard_delivery_wait(now_wait, delivery_store, wait_minutes) -> InlineKeyb
             if ind_store.size > 0:
                 keyboard[idx].append(
                     InlineKeyboardButton(
-                        MARKER_WAIT_DELIVERY_WAIT + delivery_store[idx],
+                        text=MARKER_WAIT_DELIVERY_WAIT + delivery_store[idx],
                         callback_data=f"{MARKER_WAIT_DELIVERY_WAIT} {delivery_store[idx]}",
                     )
                 )
@@ -253,37 +271,39 @@ def keyboard_delivery_wait(now_wait, delivery_store, wait_minutes) -> InlineKeyb
                     ind_min = np.where(now_wait[ind_store, 1] == minute)[0]
                     if ind_min.size > 0:
                         keyboard[idx].append(
-                            InlineKeyboardButton(f"❗{minute}", callback_data=CALLBCK_WRONG_BT_MIN_DELV_WAIT)
+                            InlineKeyboardButton(
+                                text=f"❗{minute}", callback_data=CALLBCK_WRONG_BT_MIN_DELV_WAIT
+                            )
                         )
                     else:
                         keyboard[idx].append(
                             InlineKeyboardButton(
-                                minute,
+                                text=minute,
                                 callback_data=f"{OPEN_SESSION_DELIVERY_WAIT} {delivery_store[idx]} {minute}",
                             )
                         )
             else:
                 keyboard[idx].append(
                     InlineKeyboardButton(
-                        sym_dev_st + delivery_store[idx],
+                        text=sym_dev_st + delivery_store[idx],
                         callback_data=CALLBCK_WRONG_BT_WHALE_DELV_WAIT,
                     )
                 )
                 for minute in wait_minutes:
                     keyboard[idx].append(
-                        InlineKeyboardButton(minute, callback_data=f"{delivery_store[idx]} {minute}")
+                        InlineKeyboardButton(text=minute, callback_data=f"{delivery_store[idx]} {minute}")
                     )
     else:
         for idx in range(delivery_store.size):
             keyboard[idx].append(
                 InlineKeyboardButton(
-                    sym_dev_st + delivery_store[idx],
+                    text=sym_dev_st + delivery_store[idx],
                     callback_data=CALLBCK_WRONG_BT_WHALE_DELV_WAIT,
                 )
             )
             for minute in wait_minutes:
                 keyboard[idx].append(
-                    InlineKeyboardButton(minute, callback_data=f"{delivery_store[idx]} {minute}")
+                    InlineKeyboardButton(text=minute, callback_data=f"{delivery_store[idx]} {minute}")
                 )
 
     return InlineKeyboardMarkup(keyboard)
@@ -293,7 +313,7 @@ def keyboard_cancel_delivery_wait():
     """старотвая стационарная клавиатура
         :return:
     """
-    keyboard = [[KeyboardButton(BUTTON_DELIVERY_WAIT_CANCEL)]]
+    keyboard = [[KeyboardButton(text=BUTTON_DELIVERY_WAIT_CANCEL)]]
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
 
 
@@ -301,8 +321,8 @@ def keyboard_stop_or_cancel_delivery_wait():
     """Return keyboard to stop or cancel delivery waiting."""
 
     keyboard = [
-        [KeyboardButton(BUTTON_DELIVERY_WAIT_CANCEL)],
-        [KeyboardButton(BUTTON_DELIVERY_STOP)],
+        [KeyboardButton(text=BUTTON_DELIVERY_WAIT_CANCEL)],
+        [KeyboardButton(text=BUTTON_DELIVERY_STOP)],
     ]
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
 
@@ -313,7 +333,7 @@ def keyboard_cancel_transfer():
     старотвая стационарная клавиатура
     :return:
     """
-    keyboard = [[KeyboardButton(BUTTON_TRANSFER_CANCEL)]]
+    keyboard = [[KeyboardButton(text=BUTTON_TRANSFER_CANCEL)]]
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
 
 
@@ -324,7 +344,7 @@ def keyboard_cancel_conversation() -> ReplyKeyboardMarkup:
     старотвая стационарная клавиатура
     :return:
     """
-    keyboard = [[KeyboardButton(BUTTON_CANCEL_CONVERSATION)]]
+    keyboard = [[KeyboardButton(text=BUTTON_CANCEL_CONVERSATION)]]
     return ReplyKeyboardMarkup(keyboard=keyboard, resize_keyboard=True)
 
 
@@ -337,8 +357,6 @@ def keyboard_remind(id_notification: int) -> InlineKeyboardMarkup:
         str(id_notification) + NOTIFICATION_SEPARATOR_SYMBOL + BUTTON_NOTIFICATION_REMIND_CALLBACK
     )
     keyboard = [
-        [
-            InlineKeyboardButton('Сделано|прочтено', callback_data=callback),
-        ]
+        [InlineKeyboardButton(text='Сделано|прочтено', callback_data=callback)]
     ]
     return InlineKeyboardMarkup(keyboard)
