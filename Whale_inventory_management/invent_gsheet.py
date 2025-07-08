@@ -1,56 +1,27 @@
 import pandas as pd
 
 
-# def update_gsheet(df: pd.DataFrame, gs_token: str, ws_name: str, start_cell: tuple, end_cell: tuple, addrr_time_cell: tuple):
-#     '''
-#     выводим в GS с настройками (откуда начинаем, время обновления)
-#     :param df:
-#     :param gs_token:
-#     :param ws_name:
-#     :param cell_start:
-#     :param cell_end:
-#     :param columns_to_float:
-#     :param addrr_time_cell:
-#     :return:
-#     '''
-#     gs = pygsheets.authorize(service_file = LINK_GS_JSON)
-#     # gs = pygsheets.authorize(service_file="creds1.json")
-#     service_file = LINK_GS_JSON
-#     wb = gs.open_by_key(gs_token)
-#     ws = wb.worksheet_by_title(ws_name)
-#     ws.clear(start=start_cell, end=end_cell)
-#
-#     if isinstance(df, pd.Series):  # если понадобиться записать столбец
-#         df = pd.DataFrame(df)
-#
-#     float_col = df.select_dtypes(include=['float64'])
-#     for col in float_col.columns.values:
-#         df[col] = df[col].astype('int64')
-#
-#     ws.set_dataframe(df=df, start=start_cell, copy_head=False)
-#     ws.cell(addrr_time_cell).set_value(
-#         datetime.now(tz=pytz.timezone('Asia/Krasnoyarsk')).strftime("%d.%m.%Y %H:%M")
-#     )
+def update_gsheet(
+    df: pd.DataFrame,
+    worksheet,
+    start_cell: tuple,
+    end_cell: tuple,
+) -> None:
+    """Записывает DataFrame в заданный лист Google Sheets.
 
+    Args:
+        df: Таблица для отправки.
+        worksheet: Объект листа из pygsheets.
+        start_cell: Координаты левой верхней ячейки.
+        end_cell: Координаты правой нижней ячейки, очищаемой перед записью.
+    """
 
-def update_gsheet(df: pd.DataFrame, ws, start_cell: tuple, end_cell: tuple):
-    '''
-    выводим в GS с настройками (откуда начинаем, время обновления)
-    :param df:
-    :param gs_token:
-    :param ws_name:
-    :param cell_start:
-    :param cell_end:
-    :param columns_to_float:
-    :param addrr_time_cell:
-    :return:
-    '''
-    ws.clear(start=start_cell, end=end_cell)
-    if isinstance(df, pd.Series):  # если понадобиться записать столбец
+    worksheet.clear(start=start_cell, end=end_cell)
+    if isinstance(df, pd.Series):
         df = pd.DataFrame(df)
 
-    float_col = df.select_dtypes(include=['float64'])
-    for col in float_col.columns.values:
-        df[col] = df[col].astype('int64')
+    float_columns = df.select_dtypes(include=["float64"])
+    for col in float_columns.columns:
+        df[col] = df[col].astype("int64")
 
-    ws.set_dataframe(df=df, start=start_cell, copy_head=False)
+    worksheet.set_dataframe(df=df, start=start_cell, copy_head=False)
