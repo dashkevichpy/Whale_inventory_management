@@ -1,222 +1,253 @@
-import numpy as np
-from telegram import ParseMode
-from telegram.ext import MessageHandler
-from telegram.ext import ConversationHandler
-from telegram.ext import CallbackQueryHandler
-from telegram.ext import Filters
+"""Conversation flow for breakage reports."""
 
-from class_StartKeyboard import keyboard_start
+from __future__ import annotations
+
 import os
+from typing import Any, Dict
+
+import numpy as np
+from aiogram import Router
+from aiogram.enums import ParseMode
+from aiogram.filters import Text
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.types import CallbackQuery, Message
 from dotenv import load_dotenv
 
-load_dotenv()
-CHAT_TIMEOUT = int(os.getenv('CHAT_TIMEOUT'))
-BREAKAGES_ENTRY_SHEET_NAME = os.getenv('BREAKAGES_ENTRY_SHEET_NAME')
+from class_StartKeyboard import keyboard_start
 from decorators import check_group
-from keyboards import  keyboard_yes_no, keyboard_critical, keyboard_cancel_breakage, keyboard_from_list
-
-from keyboards import BUTTON_BREAK_TITLE, BUTTON_BREAK_CANCEL
-
 from gSheet import insert_entry_breakages_gs
+from keyboards import (
+    BUTTON_BREAK_CANCEL,
+    BUTTON_BREAK_TITLE,
+    keyboard_cancel_breakage,
+    keyboard_critical,
+    keyboard_from_list,
+    keyboard_yes_no,
+)
+from postgres import get_stores_open, query_postgre
 
-# индексы для диалога с поломками
-from postgres import query_postgre,  get_stores_open
+load_dotenv()
+CHAT_TIMEOUT = int(os.getenv("CHAT_TIMEOUT"))
+BREAKAGES_ENTRY_SHEET_NAME = os.getenv("BREAKAGES_ENTRY_SHEET_NAME")
 
-ID_USER_CHAT, USER_NAME, WHICH_WHALE, WHAT_BROKEN, CRITICAL, COMMENT, CHECK_MESSAGE, \
-ID_TG_CHAT_REPORT, TEXT_MESSAGE, ID_MESSAGE_TO_DELETE = range(10)
+router = Router()
 
 
+class BreakageState(StatesGroup):
+    """States for breakage conversation."""
+
+    which_whale = State()
+    what_broken = State()
+    critical = State()
+    comment = State()
+    confirm = State()
+
+
+@router.message(Text(BUTTON_BREAK_TITLE))
 @check_group
-def broken_start(update, context):
-    print(context.user_data)
-    context.user_data[ID_USER_CHAT] = update.message.chat_id
-    # print(context.user_data[ID_USER_CHAT])
-    context.user_data[USER_NAME] = update.message.from_user.last_name
-    store_postgre = np.array(get_stores_open('store_name')).flatten()
-    store_postgre = np.insert(store_postgre, 1, 'ФК')
+async def broken_start(message: Message, state: FSMContext) -> None:
+    """Start breakage input."""
 
-    update.message.reply_text(
-        text='Выбрали 🛠Поломка',
+    await state.update_data(
+        id_user_chat=message.chat.id,
+        user_name=message.from_user.last_name,
+        id_message_to_delete=message.message_id + 2,
+    )
+
+    store_postgre = np.array(get_stores_open("store_name")).flatten()
+    store_postgre = np.insert(store_postgre, 1, "ФК")
+
+    await message.answer(
+        text="Выбрали 🛠Поломка",
         reply_markup=keyboard_cancel_breakage(),
     )
-    update.effective_message.reply_text(
-        text='Выберите место поломки:',
+    await message.answer(
+        text="Выберите место поломки:",
         reply_markup=keyboard_from_list(store_postgre, 2),
     )
-
-    context.user_data[ID_MESSAGE_TO_DELETE] = update.message.message_id + 2
-    return WHICH_WHALE
+    await state.set_state(BreakageState.which_whale)
 
 
-def broken_what(update, context):
-    query = update.callback_query
+@router.callback_query(BreakageState.which_whale)
+async def broken_what(query: CallbackQuery, state: FSMContext) -> None:
+    """Select equipment type."""
+
     whale = query.data
-    context.user_data[WHICH_WHALE] = whale
-    pg_query = '''
+    await state.update_data(which_whale=whale)
+
+    pg_query = """
         SELECT equiment_type
-        FROM breakages  
-    '''
+        FROM breakages
+    """
     equiment_type = np.array(query_postgre(pg_query)).flatten()
 
-    query.edit_message_text(
-        text=('<b>Точка:</b> {}\n'
-              'Выберите тип оборудования'.format(whale)),
+    await query.message.edit_text(
+        text=f"<b>Точка:</b> {whale}\nВыберите тип оборудования",
         reply_markup=keyboard_from_list(equiment_type, 2),
         parse_mode=ParseMode.HTML,
-        # reply_markup=keyboard_from_column(EQUIP_SHEET_NAME, 2, 3, 0, 2)
     )
+    await state.set_state(BreakageState.what_broken)
 
-    return WHAT_BROKEN
 
+@router.callback_query(BreakageState.what_broken)
+async def broken_is_crit(query: CallbackQuery, state: FSMContext) -> None:
+    """Select criticality."""
 
-def broken_is_crit(update, context):
-    query = update.callback_query
     what_broken = query.data
-    context.user_data[WHAT_BROKEN] = what_broken
-    print(context.user_data[WHAT_BROKEN])
-    pg_query = '''
-            SELECT telegram_gr
-            FROM breakages
-            WHERE equiment_type = '{}'
-        '''.format(context.user_data[WHAT_BROKEN])
+    await state.update_data(what_broken=what_broken)
 
-    context.user_data[ID_TG_CHAT_REPORT] = str(np.array(query_postgre(pg_query))[0][0])
-    # print(telegr_chat)
-    # # ID_TG_CHAT_REPORT
-
-    query.edit_message_text(
-        text=('<b>Точка:</b> {}\n'
-              '<b>Оборудование:</b> {}\n'
-              'Дальнейшая работа возможна?:'.format(context.user_data[WHICH_WHALE], what_broken)),
-        parse_mode=ParseMode.HTML,
-        reply_markup=keyboard_critical()
+    pg_query = (
+        "SELECT telegram_gr FROM breakages WHERE equiment_type = '{}'".format(
+            what_broken
+        )
     )
-    return CRITICAL
+    chat_id = str(np.array(query_postgre(pg_query))[0][0])
+    await state.update_data(id_tg_chat_report=chat_id)
+    data = await state.get_data()
+
+    await query.message.edit_text(
+        text=(
+            f"<b>Точка:</b> {data['which_whale']}\n"
+            f"<b>Оборудование:</b> {what_broken}\n"
+            "Дальнейшая работа возможна?:"
+        ),
+        parse_mode=ParseMode.HTML,
+        reply_markup=keyboard_critical(),
+    )
+    await state.set_state(BreakageState.critical)
 
 
-def broken_comment(update, context):
-    query = update.callback_query
+@router.callback_query(BreakageState.critical)
+async def broken_comment(query: CallbackQuery, state: FSMContext) -> None:
+    """Request breakage description."""
+
     critical = query.data
-    context.user_data[CRITICAL] = critical
+    await state.update_data(critical=critical)
+    data = await state.get_data()
 
-    query.edit_message_text(
-        text=('<b>Точка:</b> {}\n'
-              '<b>Оборудование:</b> {}\n'
-              '<b>Дальнейшая работа возможна?:</b> {}\n'
-              'Опишите поломку:'.format(context.user_data[WHICH_WHALE],
-                                        context.user_data[WHAT_BROKEN], critical)),
+    await query.message.edit_text(
+        text=(
+            f"<b>Точка:</b> {data['which_whale']}\n"
+            f"<b>Оборудование:</b> {data['what_broken']}\n"
+            f"<b>Дальнейшая работа возможна?:</b> {critical}\n"
+            "Опишите поломку:"
+        ),
         parse_mode=ParseMode.HTML,
     )
-    return COMMENT
+    await state.set_state(BreakageState.comment)
 
 
-def broken_check(update, context):
-    context.user_data[COMMENT] = update.message.text
+@router.message(BreakageState.comment)
+async def broken_check(message: Message, state: FSMContext) -> None:
+    """Confirm input data."""
 
-    if update.message.text == BUTTON_BREAK_CANCEL:
-        broken_cancel(update, context)
-        return ConversationHandler.END
+    if message.text == BUTTON_BREAK_CANCEL:
+        await broken_cancel(message, state)
+        return
+
+    await state.update_data(comment=message.text)
+    data = await state.get_data()
+    text_message = (
+        "Спасибо! Все верно?"
+        f"\n\n<b>Точка:</b> {data['which_whale']}"
+        f"\n <b>Оборудование:</b> {data['what_broken']}"
+        f"\n <b>Критическая:</b> {data['critical']}"
+        f"\n <b>Комментарий:</b> {data['comment']}"
+    )
+    await state.update_data(text_message=text_message)
+
+    await message.answer(
+        text=text_message,
+        parse_mode=ParseMode.HTML,
+        reply_markup=keyboard_yes_no(),
+    )
+    await state.set_state(BreakageState.confirm)
+
+
+@router.callback_query(BreakageState.confirm)
+async def broken_finish(query: CallbackQuery, state: FSMContext) -> None:
+    """Save breakage report and notify."""
+
+    data = await state.get_data()
+    if query.data == "Yes":
+        insert_entry_breakages_gs(
+            data["id_user_chat"],
+            data["which_whale"],
+            data["what_broken"],
+            data["critical"],
+            data["comment"],
+            BREAKAGES_ENTRY_SHEET_NAME,
+        )
+        await query.message.answer(
+            text="Спасибо!",
+            reply_markup=await keyboard_start(data["id_user_chat"], state),
+        )
+        await query.bot.send_message(
+            chat_id=data["id_tg_chat_report"],
+            text=data["text_message"],
+            parse_mode=ParseMode.HTML,
+        )
     else:
-        context.user_data[TEXT_MESSAGE] = ('Спасибо! Все верно?'
-                                           '\n\n<b>Точка:</b> {}'
-                                           '\n <b>Оборудование:</b> {}'
-                                           '\n <b>Критическая:</b> {}'
-                                           '\n <b>Комментарий:</b> {}'.format(context.user_data[WHICH_WHALE],
-                                                                              context.user_data[WHAT_BROKEN],
-                                                                              context.user_data[CRITICAL],
-                                                                              context.user_data[COMMENT],
-                                                                              ))
-
-        update.effective_message.reply_text(
-            text=context.user_data[TEXT_MESSAGE],
-            parse_mode=ParseMode.HTML,
-            reply_markup=keyboard_yes_no()
+        await query.message.answer(
+            text="Сообщение удалено",
+            reply_markup=await keyboard_start(data["id_user_chat"], state),
         )
-        return CHECK_MESSAGE
+    await state.clear()
 
 
-def broken_finish(update, context):
-    data = update.callback_query.data
-    if data == "Yes":
-        insert_entry_breakages_gs(context.user_data[ID_USER_CHAT],
-                                  context.user_data[WHICH_WHALE],
-                                  context.user_data[WHAT_BROKEN],
-                                  context.user_data[CRITICAL],
-                                  context.user_data[COMMENT], BREAKAGES_ENTRY_SHEET_NAME)
+async def broken_cancel(message: Message | CallbackQuery, state: FSMContext) -> None:
+    """Cancel breakage dialog."""
 
-        update.effective_message.reply_text(
-            text='Спасибо!',
-            reply_markup=keyboard_start(context.user_data[ID_USER_CHAT], context)
+    data = await state.get_data()
+    try:
+        await message.bot.delete_message(
+            chat_id=data["id_user_chat"],
+            message_id=data["id_message_to_delete"],
         )
+    except Exception:
+        pass
 
-        # отправляем сообщение в чат о поломке
-        context.bot.send_message(
-            chat_id=context.user_data[ID_TG_CHAT_REPORT],
-            text=context.user_data[TEXT_MESSAGE],
-            parse_mode=ParseMode.HTML,
-        )
+    send: Message
+    if isinstance(message, CallbackQuery):
+        send = message.message
+        await message.answer()
+    else:
+        send = message
 
-    if data == "No":
-        update.effective_message.reply_text(
-            text='Сообщение удалено',
-            reply_markup=keyboard_start(context.user_data[ID_USER_CHAT], context)
-        )
-
-    return ConversationHandler.END
-
-
-def broken_cancel(update, context):
-    """ Отменить весь процесс диалога. Данные будут утеряны
-    """
-    context.bot.delete_message(chat_id=context.user_data[ID_USER_CHAT], message_id=context.user_data[ID_MESSAGE_TO_DELETE])
-    update.message.reply_text(
-        text='Внесение поломки прервано, вернулись в стартовое меню:',
-        reply_markup=keyboard_start(context.user_data[ID_USER_CHAT], context)
+    await send.answer(
+        text="Внесение поломки прервано, вернулись в стартовое меню:",
+        reply_markup=await keyboard_start(data["id_user_chat"], state),
     )
+    await state.clear()
 
-    return ConversationHandler.END
 
+async def timeout_callback_broken(query: CallbackQuery, state: FSMContext) -> None:
+    """Notify user about timeout."""
 
-def timeout_callback_broken(update, context):
-    query = update.callback_query
-    # context.bot.delete_message(chat_id=context.user_data[ID_USER_CHAT], message_id=context.user_data[ID_MESSAGE_TO_DELETE])
-    query.edit_message_text(
-        text='Прервали внесение 🛠 поломки, не было активностей',
+    await query.message.edit_text(
+        text="Прервали внесение 🛠 поломки, не было активностей",
     )
-    update.effective_message.reply_text(
-        text='Вернулись в стартовое меню',
-        reply_markup=keyboard_start(context.user_data[ID_USER_CHAT], context),
+    data = await state.get_data()
+    await query.message.answer(
+        text="Вернулись в стартовое меню",
+        reply_markup=await keyboard_start(data["id_user_chat"], state),
     )
+    await state.clear()
 
 
-def timeout_message_broken(update, context):
-    # context.bot.delete_message(chat_id=context.user_data[ID_USER_CHAT], message_id=context.user_data[ID_MESSAGE_TO_DELETE])
-    update.message.reply_text(
-        text='Прервали внесение 🛠 поломки, не было активностей',
-        reply_markup=keyboard_start(context.user_data[ID_USER_CHAT], context),
+async def timeout_message_broken(message: Message, state: FSMContext) -> None:
+    """Timeout for message event."""
+
+    data = await state.get_data()
+    await message.answer(
+        text="Прервали внесение 🛠 поломки, не было активностей",
+        reply_markup=await keyboard_start(data["id_user_chat"], state),
     )
+    await state.clear()
 
 
-def add_observer_broken(dispatcher):
-    dispatcher.add_handler(
-        ConversationHandler(
-        entry_points=[MessageHandler(Filters.regex(BUTTON_BREAK_TITLE), broken_start, pass_user_data=True)],
+def add_observer_broken() -> Router:
+    """Return router with breakage conversation handlers."""
 
-        states={
-            WHICH_WHALE: [CallbackQueryHandler(broken_what, pass_user_data=True)],
-            WHAT_BROKEN: [CallbackQueryHandler(broken_is_crit, pass_user_data=True),
-                          MessageHandler(Filters.regex(BUTTON_BREAK_CANCEL), broken_cancel, pass_user_data=True)],
-            CRITICAL: [CallbackQueryHandler(broken_comment, pass_user_data=True),
-                       MessageHandler(Filters.regex(BUTTON_BREAK_CANCEL), broken_cancel, pass_user_data=True)],
-            COMMENT: [MessageHandler(Filters.text, broken_check, pass_user_data=True),
-                      MessageHandler(Filters.regex(BUTTON_BREAK_CANCEL), broken_cancel, pass_user_data=True)],
-            CHECK_MESSAGE: [CallbackQueryHandler(broken_finish, pass_user_data=True),
-                            MessageHandler(Filters.regex(BUTTON_BREAK_CANCEL), broken_cancel, pass_user_data=True)],
-            ConversationHandler.TIMEOUT:
-                [CallbackQueryHandler(timeout_callback_broken, pass_job_queue=True, pass_update_queue=True),
-                 MessageHandler(Filters.text | Filters.command, timeout_message_broken)],
-        },
-
-        fallbacks=[MessageHandler(Filters.regex(BUTTON_BREAK_CANCEL), broken_cancel, pass_user_data=True)],
-        conversation_timeout=CHAT_TIMEOUT
-    ))
+    return router
