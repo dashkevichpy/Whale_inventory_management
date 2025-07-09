@@ -50,7 +50,7 @@ def query_postgre(query: str):
 
     logging.debug("Postgre query: %s", query)
     if TEST_MODE:
-        first_word = re.search(r"\b(\w+)\b", query)
+        first_word = re.search(r"^\s*(?:\(+\s*)*(\w+)", query, re.IGNORECASE)
         if first_word and first_word.group(1).lower() not in {"select", "with"}:
             logging.info("TEST_MODE: skip query execution")
             return None

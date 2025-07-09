@@ -1,22 +1,22 @@
-2025-07-08 23:49:38,344 - asyncio - DEBUG - Using selector: KqueueSelector
-2025-07-08 23:49:38,344 - root - DEBUG - Starting bot
-2025-07-08 23:49:38,344 - root - DEBUG - conversation_choose_whale
-2025-07-08 23:49:38,362 - aiogram.dispatcher - INFO - Start polling
-2025-07-08 23:49:39,037 - aiogram.dispatcher - INFO - Run polling for bot @bImas_tas_bot id=7964566377 - 'bImas_tas_bot'
-2025-07-08 23:49:54,352 - root - DEBUG - cmd_start from 382371597
-2025-07-08 23:49:54,353 - root - INFO - Use hardcoded cashier for 382371597
-2025-07-08 23:49:54,956 - aiogram.event - INFO - Update id=996116854 is handled. Duration 603 ms by bot id=7964566377
-2025-07-08 23:49:56,611 - root - DEBUG - stoplist_start from 382371597
-2025-07-08 23:49:56,611 - root - DEBUG - Postgre query: 
+2025-07-09 02:51:23,153 - asyncio - DEBUG - Using selector: KqueueSelector
+2025-07-09 02:51:23,154 - root - DEBUG - Starting bot
+2025-07-09 02:51:23,154 - root - DEBUG - conversation_choose_whale
+2025-07-09 02:51:23,171 - aiogram.dispatcher - INFO - Start polling
+2025-07-09 02:51:23,734 - aiogram.dispatcher - INFO - Run polling for bot @bImas_tas_bot id=7964566377 - 'bImas_tas_bot'
+2025-07-09 02:51:36,421 - root - DEBUG - cmd_start from 382371597
+2025-07-09 02:51:36,422 - root - INFO - Use hardcoded cashier for 382371597
+2025-07-09 02:51:37,156 - aiogram.event - INFO - Update id=996116857 is handled. Duration 735 ms by bot id=7964566377
+2025-07-09 02:51:38,468 - root - DEBUG - stoplist_start from 382371597
+2025-07-09 02:51:38,468 - root - DEBUG - Postgre query: 
         SELECT nomenclature_name
         FROM stop_list
         INNER JOIN nomenclature USING(iiko_code)
         WHERE id_store = 0 AND date_end_stop is NULL;
     
-2025-07-08 23:49:57,261 - root - DEBUG - Result: []
-2025-07-08 23:49:57,745 - aiogram.event - INFO - Update id=996116855 is handled. Duration 1134 ms by bot id=7964566377
-2025-07-08 23:49:59,133 - root - DEBUG - stoplist_add query=add
-2025-07-08 23:49:59,134 - root - DEBUG - Postgre query: 
+2025-07-09 02:51:39,099 - root - DEBUG - Result: []
+2025-07-09 02:51:39,516 - aiogram.event - INFO - Update id=996116858 is handled. Duration 1048 ms by bot id=7964566377
+2025-07-09 02:51:40,898 - root - DEBUG - stoplist_add query=add
+2025-07-09 02:51:40,898 - root - DEBUG - Postgre query: 
         (SELECT nomenclature_name
             FROM nomenclature
             WHERE stop_list is TRUE
@@ -33,25 +33,55 @@
             WHERE id_store = 0
             ORDER BY nomenclature_name;
     
-2025-07-08 23:49:59,134 - root - INFO - TEST_MODE: skip query execution
-2025-07-08 23:49:59,303 - root - DEBUG - _to_dispatch info=None
-2025-07-08 23:49:59,303 - root - DEBUG - Postgre query: 
+2025-07-09 02:51:41,448 - root - DEBUG - Result: []
+2025-07-09 02:51:41,672 - root - DEBUG - _to_dispatch info=None
+2025-07-09 02:51:41,673 - root - DEBUG - Postgre query: 
         SELECT nomenclature_name
         FROM stop_list
         INNER JOIN nomenclature USING(iiko_code)
         WHERE id_store = 0 AND date_end_stop is NULL;
     
-2025-07-08 23:49:59,852 - root - DEBUG - Result: []
-2025-07-08 23:50:00,081 - aiogram.event - INFO - Update id=996116856 is handled. Duration 949 ms by bot id=7964566377
-2025-07-09 00:46:29,710 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [Errno 54] Connection reset by peer
-2025-07-09 00:46:29,793 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7964566377)
-2025-07-09 00:46:41,928 - aiogram.dispatcher - INFO - Connection established (tryings = 1, bot id = 7964566377)
-2025-07-09 02:14:49,698 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [Errno 54] Connection reset by peer
-2025-07-09 02:14:49,700 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7964566377)
-2025-07-09 02:15:01,276 - aiogram.dispatcher - INFO - Connection established (tryings = 1, bot id = 7964566377)
-2025-07-09 02:29:43,027 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [Errno 54] Connection reset by peer
-2025-07-09 02:29:43,116 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7964566377)
-2025-07-09 02:29:55,254 - aiogram.dispatcher - INFO - Connection established (tryings = 1, bot id = 7964566377)
-2025-07-09 02:31:15,971 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [Errno 54] Connection reset by peer
-2025-07-09 02:31:16,025 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7964566377)
-2025-07-09 02:31:27,580 - aiogram.dispatcher - INFO - Connection established (tryings = 1, bot id = 7964566377)
+2025-07-09 02:51:42,229 - root - DEBUG - Result: []
+2025-07-09 02:51:42,444 - aiogram.event - INFO - Update id=996116859 is handled. Duration 1546 ms by bot id=7964566377
+2025-07-09 02:51:47,094 - root - DEBUG - register_cancel
+2025-07-09 02:51:47,095 - root - INFO - Use hardcoded cashier for 382371597
+2025-07-09 02:51:47,258 - aiogram.event - INFO - Update id=996116860 is handled. Duration 165 ms by bot id=7964566377
+2025-07-09 02:51:48,504 - root - DEBUG - stoplist_start from 382371597
+2025-07-09 02:51:48,504 - root - INFO - Use hardcoded cashier for 382371597
+2025-07-09 02:51:48,641 - aiogram.event - INFO - Update id=996116861 is handled. Duration 138 ms by bot id=7964566377
+2025-07-09 04:21:42,804 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [Errno 54] Connection reset by peer
+2025-07-09 04:21:42,804 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7964566377)
+2025-07-09 04:21:54,797 - aiogram.dispatcher - INFO - Connection established (tryings = 1, bot id = 7964566377)
+2025-07-09 04:56:29,802 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [Errno 54] Connection reset by peer
+2025-07-09 04:56:29,802 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7964566377)
+2025-07-09 04:56:41,678 - aiogram.dispatcher - INFO - Connection established (tryings = 1, bot id = 7964566377)
+2025-07-09 05:57:30,846 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [Errno 54] Connection reset by peer
+2025-07-09 05:57:30,846 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7964566377)
+2025-07-09 05:57:42,747 - aiogram.dispatcher - INFO - Connection established (tryings = 1, bot id = 7964566377)
+2025-07-09 06:53:17,892 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [Errno 54] Connection reset by peer
+2025-07-09 06:53:17,893 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7964566377)
+2025-07-09 06:53:31,043 - aiogram.dispatcher - INFO - Connection established (tryings = 1, bot id = 7964566377)
+2025-07-09 06:58:30,873 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [Errno 54] Connection reset by peer
+2025-07-09 06:58:30,873 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7964566377)
+2025-07-09 06:58:42,725 - aiogram.dispatcher - INFO - Connection established (tryings = 1, bot id = 7964566377)
+2025-07-09 07:37:43,063 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [Errno 54] Connection reset by peer
+2025-07-09 07:37:43,064 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7964566377)
+2025-07-09 07:37:55,029 - aiogram.dispatcher - INFO - Connection established (tryings = 1, bot id = 7964566377)
+2025-07-09 07:53:29,872 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [Errno 54] Connection reset by peer
+2025-07-09 07:53:29,872 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7964566377)
+2025-07-09 07:53:41,551 - aiogram.dispatcher - INFO - Connection established (tryings = 1, bot id = 7964566377)
+2025-07-09 08:33:55,612 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [Errno 54] Connection reset by peer
+2025-07-09 08:33:55,715 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7964566377)
+2025-07-09 08:34:07,276 - aiogram.dispatcher - INFO - Connection established (tryings = 1, bot id = 7964566377)
+2025-07-09 10:10:45,918 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [Errno 54] Connection reset by peer
+2025-07-09 10:10:45,918 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7964566377)
+2025-07-09 10:10:57,645 - aiogram.dispatcher - INFO - Connection established (tryings = 1, bot id = 7964566377)
+2025-07-09 10:35:31,714 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [Errno 54] Connection reset by peer
+2025-07-09 10:35:31,714 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7964566377)
+2025-07-09 10:35:43,634 - aiogram.dispatcher - INFO - Connection established (tryings = 1, bot id = 7964566377)
+2025-07-09 10:56:09,687 - aiogram.dispatcher - ERROR - Failed to fetch updates - TelegramNetworkError: HTTP Client says - ClientOSError: [Errno 54] Connection reset by peer
+2025-07-09 10:56:09,687 - aiogram.dispatcher - WARNING - Sleep for 1.000000 seconds and try again... (tryings = 0, bot id = 7964566377)
+2025-07-09 10:56:22,543 - aiogram.dispatcher - INFO - Connection established (tryings = 1, bot id = 7964566377)
+2025-07-09 10:58:41,037 - aiogram.dispatcher - WARNING - Received SIGINT signal
+2025-07-09 10:58:41,038 - aiogram.dispatcher - INFO - Polling stopped for bot @bImas_tas_bot id=7964566377 - 'bImas_tas_bot'
+2025-07-09 10:58:41,038 - aiogram.dispatcher - INFO - Polling stopped
