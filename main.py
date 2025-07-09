@@ -4,6 +4,9 @@ import asyncio
 import logging
 import os
 
+# use test mode to skip database writes
+os.environ.setdefault("TEST_MODE", "true")
+
 from aiogram import Bot, Dispatcher, Router
 from aiogram.enums import ParseMode
 from aiogram.client.default import DefaultBotProperties
@@ -22,6 +25,12 @@ from Conversations.conversationChooseWhale import (
 )
 from Conversations.conversationRegister import conversation_register
 from Conversations.conversationStoplist import conversation_stoplist
+from Conversations.conversationStocks import conversation_stocks
+from Conversations.conversationTransfer import conversation_transfer
+from Conversations.conversationBreak import add_observer_broken
+from Conversations.conversationWaiting import conversation_waiting
+from Conversations.conversationErrors import conversation_errors
+from Conversations.conversationDeliveryWaiting import conversation_delivery_waiting
 from postgres import log_tables_structure
 
 load_dotenv()
@@ -69,6 +78,13 @@ async def main() -> None:
     dp.include_router(conversation_choose_whale())
     dp.include_router(conversation_register())
     dp.include_router(conversation_stoplist())
+    dp.include_router(conversation_stocks())
+    dp.include_router(conversation_transfer())
+    dp.include_router(add_observer_broken())
+    dp.include_router(conversation_waiting())
+    dp.include_router(conversation_errors())
+    dp.include_router(conversation_delivery_waiting())
+
 
     bot = Bot(
         TOKEN,
