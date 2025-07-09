@@ -1,55 +1,225 @@
-2025-07-09 10:59:10,549 - asyncio - DEBUG - Using selector: KqueueSelector
-2025-07-09 10:59:10,549 - root - DEBUG - Starting bot
-2025-07-09 10:59:10,549 - root - DEBUG - conversation_choose_whale
-2025-07-09 10:59:10,566 - aiogram.dispatcher - INFO - Start polling
-2025-07-09 10:59:11,182 - aiogram.dispatcher - INFO - Run polling for bot @bImas_tas_bot id=7964566377 - 'bImas_tas_bot'
-2025-07-09 10:59:22,556 - root - DEBUG - stoplist_start from 382371597
-2025-07-09 10:59:22,556 - root - INFO - Use hardcoded cashier for 382371597
-2025-07-09 10:59:23,145 - aiogram.event - INFO - Update id=996116862 is handled. Duration 601 ms by bot id=7964566377
-2025-07-09 10:59:25,510 - root - DEBUG - cmd_start from 382371597
-2025-07-09 10:59:25,511 - root - INFO - Use hardcoded cashier for 382371597
-2025-07-09 10:59:25,684 - aiogram.event - INFO - Update id=996116863 is handled. Duration 174 ms by bot id=7964566377
-2025-07-09 10:59:29,042 - root - DEBUG - stoplist_start from 382371597
-2025-07-09 10:59:29,043 - root - DEBUG - Postgre query: 
-        SELECT nomenclature_name
-        FROM stop_list
-        INNER JOIN nomenclature USING(iiko_code)
-        WHERE id_store = 0 AND date_end_stop is NULL;
-    
-2025-07-09 10:59:29,621 - root - DEBUG - Result: []
-2025-07-09 10:59:29,991 - aiogram.event - INFO - Update id=996116864 is handled. Duration 950 ms by bot id=7964566377
-2025-07-09 10:59:31,291 - root - DEBUG - stoplist_add query=add
-2025-07-09 10:59:31,292 - root - DEBUG - Postgre query: 
-        (SELECT nomenclature_name
-            FROM nomenclature
-            WHERE stop_list is TRUE
-            EXCEPT
-            SELECT nomenclature_name
-            FROM stop_list
-            INNER JOIN store USING(id_store)
-            INNER JOIN nomenclature USING(iiko_code)
-            WHERE id_store = 0 AND date_end_stop is NULL)
-            INTERSECT
-            SELECT nomenclature_name
-            FROM store_nomenclature
-            INNER JOIN nomenclature USING(iiko_code)
-            WHERE id_store = 0
-            ORDER BY nomenclature_name;
-    
-2025-07-09 10:59:31,849 - root - DEBUG - Result: []
-2025-07-09 10:59:32,070 - root - DEBUG - _to_dispatch info=None
-2025-07-09 10:59:32,070 - root - DEBUG - Postgre query: 
-        SELECT nomenclature_name
-        FROM stop_list
-        INNER JOIN nomenclature USING(iiko_code)
-        WHERE id_store = 0 AND date_end_stop is NULL;
-    
-2025-07-09 10:59:32,615 - root - DEBUG - Result: []
-2025-07-09 10:59:32,827 - aiogram.event - INFO - Update id=996116865 is handled. Duration 1537 ms by bot id=7964566377
-2025-07-09 10:59:37,389 - aiogram.event - INFO - Update id=996116866 is not handled. Duration 2 ms by bot id=7964566377
-2025-07-09 11:06:39,860 - root - DEBUG - register_cancel
-2025-07-09 11:06:39,860 - root - INFO - Use hardcoded cashier for 382371597
-2025-07-09 11:06:40,469 - aiogram.event - INFO - Update id=996116867 is handled. Duration 609 ms by bot id=7964566377
-2025-07-09 11:08:03,970 - aiogram.dispatcher - WARNING - Received SIGINT signal
-2025-07-09 11:08:03,971 - aiogram.dispatcher - INFO - Polling stopped for bot @bImas_tas_bot id=7964566377 - 'bImas_tas_bot'
-2025-07-09 11:08:03,971 - aiogram.dispatcher - INFO - Polling stopped
+2025-07-09 11:10:49,524 - asyncio - DEBUG - Using selector: KqueueSelector
+2025-07-09 11:10:49,524 - root - DEBUG - Starting bot
+2025-07-09 11:10:49,524 - root - DEBUG - conversation_choose_whale
+2025-07-09 11:10:49,542 - aiogram.dispatcher - INFO - Start polling
+2025-07-09 11:10:50,156 - aiogram.dispatcher - INFO - Run polling for bot @bImas_tas_bot id=7964566377 - 'bImas_tas_bot'
+2025-07-09 11:11:32,728 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'Telegram'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:33,298 - root - DEBUG - Result: []
+2025-07-09 11:11:33,373 - root - INFO - Table Telegram structure: []
+2025-07-09 11:11:33,373 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'department'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:33,917 - root - DEBUG - Result: [('id_department', 'smallint'), ('department_name', 'character varying'), ('department_code', 'character varying'), ('invent_col', 'character varying'), ('group_id_telegram', 'bigint')]
+2025-07-09 11:11:33,985 - root - INFO - Table department structure: [('id_department', 'smallint'), ('department_name', 'character varying'), ('department_code', 'character varying'), ('invent_col', 'character varying'), ('group_id_telegram', 'bigint')]
+2025-07-09 11:11:33,985 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'dotenv'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:34,535 - root - DEBUG - Result: []
+2025-07-09 11:11:34,608 - root - INFO - Table dotenv structure: []
+2025-07-09 11:11:34,608 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'employee'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:35,171 - root - DEBUG - Result: [('id_employee', 'integer'), ('employee_name', 'character varying'), ('employee_tlgr', 'bigint'), ('job_title', 'character varying'), ('id_job_titles', 'smallint'), ('tel_first_name', 'character varying'), ('tel_last_name', 'character varying'), ('tel_username', 'character varying')]
+2025-07-09 11:11:35,242 - root - INFO - Table employee structure: [('id_employee', 'integer'), ('employee_name', 'character varying'), ('employee_tlgr', 'bigint'), ('job_title', 'character varying'), ('id_job_titles', 'smallint'), ('tel_first_name', 'character varying'), ('tel_last_name', 'character varying'), ('tel_username', 'character varying')]
+2025-07-09 11:11:35,242 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'employee_in_store'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:35,796 - root - DEBUG - Result: [('id_employee_in_store', 'integer'), ('id_store', 'smallint'), ('chat_id_telegram', 'bigint')]
+2025-07-09 11:11:35,875 - root - INFO - Table employee_in_store structure: [('id_employee_in_store', 'integer'), ('id_store', 'smallint'), ('chat_id_telegram', 'bigint')]
+2025-07-09 11:11:35,876 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'information_schema'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:36,469 - root - DEBUG - Result: []
+2025-07-09 11:11:36,536 - root - INFO - Table information_schema structure: []
+2025-07-09 11:11:36,536 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'job_titles'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:37,079 - root - DEBUG - Result: [('id_job_titles', 'smallint'), ('title', 'character varying'), ('hour_rate', 'integer'), ('overtime_limit', 'integer'), ('id_department', 'smallint')]
+2025-07-09 11:11:37,161 - root - INFO - Table job_titles structure: [('id_job_titles', 'smallint'), ('title', 'character varying'), ('hour_rate', 'integer'), ('overtime_limit', 'integer'), ('id_department', 'smallint')]
+2025-07-09 11:11:37,161 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'meal'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:37,721 - root - DEBUG - Result: [('id_meal', 'integer'), ('meal_name', 'character varying')]
+2025-07-09 11:11:37,788 - root - INFO - Table meal structure: [('id_meal', 'integer'), ('meal_name', 'character varying')]
+2025-07-09 11:11:37,788 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'meal_provision'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:38,370 - root - DEBUG - Result: [('id_meal_provision', 'integer'), ('quantity', 'integer'), ('id_meal', 'smallint'), ('id_provision', 'smallint')]
+2025-07-09 11:11:38,441 - root - INFO - Table meal_provision structure: [('id_meal_provision', 'integer'), ('quantity', 'integer'), ('id_meal', 'smallint'), ('id_provision', 'smallint')]
+2025-07-09 11:11:38,441 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'n'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:38,999 - root - DEBUG - Result: []
+2025-07-09 11:11:39,070 - root - INFO - Table n structure: []
+2025-07-09 11:11:39,071 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'nomenclature'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:39,625 - root - DEBUG - Result: [('iiko_code', 'character varying'), ('iiko_guid', 'character varying'), ('nomenclature_name', 'character varying'), ('units_of_measure', 'character varying'), ('production_batch', 'integer'), ('production', 'boolean'), ('external_supply', 'boolean'), ('plant_storage', 'boolean'), ('internal_supply', 'boolean'), ('pack_cleaning', 'boolean'), ('price', 'double precision'), ('handling_losses', 'smallint'), ('id_container', 'smallint'), ('invent_type', 'character varying'), ('department_code', 'character varying'), ('min_order_quant', 'integer'), ('id_storage_area_plant', 'smallint'), ('shift_production', 'smallint'), ('prov_acceptance', 'boolean'), ('stop_list', 'boolean'), ('is_residuals_monitoring', 'boolean'), ('short_nomenclature_name', 'character varying')]
+2025-07-09 11:11:39,701 - root - INFO - Table nomenclature structure: [('iiko_code', 'character varying'), ('iiko_guid', 'character varying'), ('nomenclature_name', 'character varying'), ('units_of_measure', 'character varying'), ('production_batch', 'integer'), ('production', 'boolean'), ('external_supply', 'boolean'), ('plant_storage', 'boolean'), ('internal_supply', 'boolean'), ('pack_cleaning', 'boolean'), ('price', 'double precision'), ('handling_losses', 'smallint'), ('id_container', 'smallint'), ('invent_type', 'character varying'), ('department_code', 'character varying'), ('min_order_quant', 'integer'), ('id_storage_area_plant', 'smallint'), ('shift_production', 'smallint'), ('prov_acceptance', 'boolean'), ('stop_list', 'boolean'), ('is_residuals_monitoring', 'boolean'), ('short_nomenclature_name', 'character varying')]
+2025-07-09 11:11:39,704 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'notification'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:40,255 - root - DEBUG - Result: [('id_notification', 'integer'), ('type', 'character varying'), ('id_department', 'smallint'), ('notification_text', 'character varying'), ('notification_date', 'date'), ('weekdays', 'ARRAY'), ('stores', 'ARRAY'), ('notification_time', 'time without time zone'), ('minutes_to_do', 'smallint')]
+2025-07-09 11:11:40,330 - root - INFO - Table notification structure: [('id_notification', 'integer'), ('type', 'character varying'), ('id_department', 'smallint'), ('notification_text', 'character varying'), ('notification_date', 'date'), ('weekdays', 'ARRAY'), ('stores', 'ARRAY'), ('notification_time', 'time without time zone'), ('minutes_to_do', 'smallint')]
+2025-07-09 11:11:40,331 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'pg_stat_activity'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:40,880 - root - DEBUG - Result: [('datid', 'oid'), ('datname', 'name'), ('pid', 'integer'), ('leader_pid', 'integer'), ('usesysid', 'oid'), ('usename', 'name'), ('application_name', 'text'), ('client_addr', 'inet'), ('client_hostname', 'text'), ('client_port', 'integer'), ('backend_start', 'timestamp with time zone'), ('xact_start', 'timestamp with time zone'), ('query_start', 'timestamp with time zone'), ('state_change', 'timestamp with time zone'), ('wait_event_type', 'text'), ('wait_event', 'text'), ('state', 'text'), ('backend_xid', 'xid'), ('backend_xmin', 'xid'), ('query', 'text'), ('backend_type', 'text')]
+2025-07-09 11:11:40,948 - root - INFO - Table pg_stat_activity structure: [('datid', 'oid'), ('datname', 'name'), ('pid', 'integer'), ('leader_pid', 'integer'), ('usesysid', 'oid'), ('usename', 'name'), ('application_name', 'text'), ('client_addr', 'inet'), ('client_hostname', 'text'), ('client_port', 'integer'), ('backend_start', 'timestamp with time zone'), ('xact_start', 'timestamp with time zone'), ('query_start', 'timestamp with time zone'), ('state_change', 'timestamp with time zone'), ('wait_event_type', 'text'), ('wait_event', 'text'), ('state', 'text'), ('backend_xid', 'xid'), ('backend_xmin', 'xid'), ('query', 'text'), ('backend_type', 'text')]
+2025-07-09 11:11:40,948 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'provision'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:41,498 - root - DEBUG - Result: [('id_provision', 'integer'), ('provision_name', 'character varying'), ('notification_rank', 'smallint'), ('id_category_provision', 'smallint'), ('provision_code', 'character varying'), ('units_of_measure', 'character varying'), ('guid', 'character varying'), ('storage_day', 'smallint'), ('batch_production', 'integer'), ('coeff_storage_hold', 'real'), ('weight_1_unit', 'real'), ('shift', 'smallint'), ('min_storage_plant', 'real'), ('type_prov', 'character varying'), ('from_inter_prov', 'character varying'), ('display_cook', 'smallint'), ('min_order_quant', 'integer'), ('cashier_bm', 'character varying'), ('estimate_or_fix', 'character varying'), ('short_prov_name', 'character varying'), ('counterparts_sales', 'boolean')]
+2025-07-09 11:11:41,570 - root - INFO - Table provision structure: [('id_provision', 'integer'), ('provision_name', 'character varying'), ('notification_rank', 'smallint'), ('id_category_provision', 'smallint'), ('provision_code', 'character varying'), ('units_of_measure', 'character varying'), ('guid', 'character varying'), ('storage_day', 'smallint'), ('batch_production', 'integer'), ('coeff_storage_hold', 'real'), ('weight_1_unit', 'real'), ('shift', 'smallint'), ('min_storage_plant', 'real'), ('type_prov', 'character varying'), ('from_inter_prov', 'character varying'), ('display_cook', 'smallint'), ('min_order_quant', 'integer'), ('cashier_bm', 'character varying'), ('estimate_or_fix', 'character varying'), ('short_prov_name', 'character varying'), ('counterparts_sales', 'boolean')]
+2025-07-09 11:11:41,570 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'psycopg2'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:42,103 - root - DEBUG - Result: []
+2025-07-09 11:11:42,174 - root - INFO - Table psycopg2 structure: []
+2025-07-09 11:11:42,174 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'query'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:42,710 - root - DEBUG - Result: []
+2025-07-09 11:11:42,781 - root - INFO - Table query structure: []
+2025-07-09 11:11:42,781 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'rows'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:43,323 - root - DEBUG - Result: []
+2025-07-09 11:11:43,393 - root - INFO - Table rows structure: []
+2025-07-09 11:11:43,394 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'send_notification'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:43,951 - root - DEBUG - Result: [('id_send_notification', 'integer'), ('id_notification', 'integer'), ('id_employee', 'integer'), ('datetime_send', 'timestamp without time zone'), ('datetime_press_button', 'timestamp without time zone')]
+2025-07-09 11:11:44,020 - root - INFO - Table send_notification structure: [('id_send_notification', 'integer'), ('id_notification', 'integer'), ('id_employee', 'integer'), ('datetime_send', 'timestamp without time zone'), ('datetime_press_button', 'timestamp without time zone')]
+2025-07-09 11:11:44,021 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'sqlalchemy'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:44,565 - root - DEBUG - Result: []
+2025-07-09 11:11:44,633 - root - INFO - Table sqlalchemy structure: []
+2025-07-09 11:11:44,634 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'stop_list'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:45,186 - root - DEBUG - Result: [('id_stop_list', 'integer'), ('id_store', 'smallint'), ('iiko_code', 'character varying'), ('date_start_stop', 'timestamp without time zone'), ('date_end_stop', 'timestamp without time zone')]
+2025-07-09 11:11:45,257 - root - INFO - Table stop_list structure: [('id_stop_list', 'integer'), ('id_store', 'smallint'), ('iiko_code', 'character varying'), ('date_start_stop', 'timestamp without time zone'), ('date_end_stop', 'timestamp without time zone')]
+2025-07-09 11:11:45,257 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'stoplist'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:45,803 - root - DEBUG - Result: []
+2025-07-09 11:11:45,875 - root - INFO - Table stoplist structure: []
+2025-07-09 11:11:45,875 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'store'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:46,452 - root - DEBUG - Result: [('id_store', 'integer'), ('store_name', 'character varying'), ('revenue_attention', 'integer'), ('name_iiko', 'character varying'), ('invent_cashier', 'character varying'), ('invent_bm', 'character varying'), ('delivery', 'boolean'), ('basic_delivery_time', 'smallint'), ('restoraunt_group', 'character varying'), ('is_open', 'boolean'), ('open_hour', 'smallint'), ('close_hour', 'smallint'), ('everyday_shipment', 'boolean'), ('long_distance_id', 'character varying')]
+2025-07-09 11:11:46,550 - root - INFO - Table store structure: [('id_store', 'integer'), ('store_name', 'character varying'), ('revenue_attention', 'integer'), ('name_iiko', 'character varying'), ('invent_cashier', 'character varying'), ('invent_bm', 'character varying'), ('delivery', 'boolean'), ('basic_delivery_time', 'smallint'), ('restoraunt_group', 'character varying'), ('is_open', 'boolean'), ('open_hour', 'smallint'), ('close_hour', 'smallint'), ('everyday_shipment', 'boolean'), ('long_distance_id', 'character varying')]
+2025-07-09 11:11:46,551 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'store_nomenclature'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:47,102 - root - DEBUG - Result: [('id_store_nomenclature', 'smallint'), ('iiko_code', 'character varying'), ('id_store', 'smallint'), ('shipment_reduction_coeff', 'real'), ('order_group', 'smallint'), ('unconditional_shipment', 'integer'), ('question_invent', 'character varying'), ('shipment_batch_for_y_n', 'smallint'), ('min_residual_amount', 'integer'), ('cancel_transport', 'boolean')]
+2025-07-09 11:11:47,176 - root - INFO - Table store_nomenclature structure: [('id_store_nomenclature', 'smallint'), ('iiko_code', 'character varying'), ('id_store', 'smallint'), ('shipment_reduction_coeff', 'real'), ('order_group', 'smallint'), ('unconditional_shipment', 'integer'), ('question_invent', 'character varying'), ('shipment_batch_for_y_n', 'smallint'), ('min_residual_amount', 'integer'), ('cancel_transport', 'boolean')]
+2025-07-09 11:11:47,177 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'tabulate'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:47,770 - root - DEBUG - Result: []
+2025-07-09 11:11:47,845 - root - INFO - Table tabulate structure: []
+2025-07-09 11:11:47,845 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'temp'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:48,406 - root - DEBUG - Result: []
+2025-07-09 11:11:48,477 - root - INFO - Table temp structure: []
+2025-07-09 11:11:48,478 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'wait_entry'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:49,038 - root - DEBUG - Result: [('id_wait_entry', 'integer'), ('date_time', 'timestamp without time zone'), ('wait_min', 'smallint'), ('id_wait_session', 'smallint')]
+2025-07-09 11:11:49,110 - root - INFO - Table wait_entry structure: [('id_wait_entry', 'integer'), ('date_time', 'timestamp without time zone'), ('wait_min', 'smallint'), ('id_wait_session', 'smallint')]
+2025-07-09 11:11:49,111 - root - DEBUG - Postgre query: 
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = 'wait_session'
+            ORDER BY ordinal_position;
+        
+2025-07-09 11:11:49,656 - root - DEBUG - Result: [('id_wait_session', 'integer'), ('begin_wait', 'timestamp without time zone'), ('id_store', 'smallint'), ('max_wait', 'smallint'), ('end_wait', 'timestamp without time zone'), ('product_name', 'character varying'), ('duration_wait', 'interval'), ('now_wait', 'smallint')]
+2025-07-09 11:11:49,727 - root - INFO - Table wait_session structure: [('id_wait_session', 'integer'), ('begin_wait', 'timestamp without time zone'), ('id_store', 'smallint'), ('max_wait', 'smallint'), ('end_wait', 'timestamp without time zone'), ('product_name', 'character varying'), ('duration_wait', 'interval'), ('now_wait', 'smallint')]
+2025-07-09 11:11:49,728 - aiogram.event - INFO - Update id=996116868 is handled. Duration 17530 ms by bot id=7964566377
+2025-07-09 11:25:46,371 - aiogram.dispatcher - WARNING - Received SIGINT signal
+2025-07-09 11:25:46,372 - aiogram.dispatcher - INFO - Polling stopped for bot @bImas_tas_bot id=7964566377 - 'bImas_tas_bot'
+2025-07-09 11:25:46,372 - aiogram.dispatcher - INFO - Polling stopped
