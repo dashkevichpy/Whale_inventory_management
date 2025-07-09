@@ -159,20 +159,20 @@ def del_emloyee_assignment():
 
 def end_day_wait():
     """Close all open wait sessions and create zero entries."""
-    query_db = '''
+    query_db = f"""
             SET TIMEZONE='posix/{TIME_ZONE}';
             UPDATE wait_session
             SET end_wait = date_trunc('minute', now()), duration_wait = date_trunc('minute', (now() - begin_wait))
             WHERE end_wait is NULL
-            RETURNING id_wait_session                   
-                   '''
+            RETURNING id_wait_session
+                   """
     open_sessions = np.array(query_postgre(query_db)).flatten()
-    for i in open_sessions:
-        query_db = '''
+    for session_id in open_sessions:
+        query_db = f"""
                     SET TIMEZONE='posix/{TIME_ZONE}';
                     INSERT INTO wait_entry (date_time,wait_min,id_wait_session)
-                    VALUES (date_trunc('minute', now()), 0, {})
-                    '''.format(i)
+                    VALUES (date_trunc('minute', now()), 0, {session_id})
+                    """
         query_postgre(query_db)
 
 
@@ -411,14 +411,14 @@ def pg_get_nomenclature_to_stop_list(id_store: int) -> list:
 
 
 def pg_add_stop_list(id_store: int, nomenclature_name: str) -> None:
-    """Add nomenclature item to stop list for store."""
-    query = '''
+    """Add nomenclature item to stop list for a store."""
+    query = f"""
             SET TIMEZONE='posix/{TIME_ZONE}';
             INSERT INTO stop_list (id_store, iiko_code, date_start_stop)
             SELECT {id_store}, nomenclature.iiko_code,  date_trunc('minute', now())
             FROM nomenclature
             WHERE nomenclature.nomenclature_name = '{nomenclature_name}';
-    '''.format(id_store=id_store, nomenclature_name=nomenclature_name)
+    """
     query_postgre(query)
 
 
@@ -455,12 +455,12 @@ def pg_remove_stop_list(id_store: int, nomenclature_name: str) -> None:
 
 def end_day_stop():
     """Finish all active stop list records."""
-    query = '''
+    query = f"""
                 SET TIMEZONE='posix/{TIME_ZONE}';
                 UPDATE stop_list
                 SET date_end_stop = date_trunc('minute', now())
-                WHERE date_end_stop is NULL            
-                       '''
+                WHERE date_end_stop is NULL
+                       """
     query_postgre(query)
 
 
