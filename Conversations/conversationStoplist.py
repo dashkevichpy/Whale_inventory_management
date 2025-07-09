@@ -32,7 +32,6 @@ from postgres import (
 )
 
 load_dotenv()
-TG_GROUP_NAMES = eval(os.getenv("TG_GROUP_NAMES", "{}"))
 STOPS_TG = os.getenv("STOPS_TG", "")
 
 
@@ -205,7 +204,7 @@ async def stoplist_add_select(query: CallbackQuery, state: FSMContext) -> None:
     nomenclature = query.data
     pg_add_stop_list(employee.id_store, nomenclature)
     await query.bot.send_message(
-        chat_id=TG_GROUP_NAMES.get(STOPS_TG, ""),
+        chat_id=STOPS_TG,
         text=f"➕⛔ {nomenclature} в {employee.store_name}",
     )
     await _to_dispatch(query.message, state, info=f"Добавили {nomenclature}")
@@ -220,7 +219,7 @@ async def stoplist_remove_select(query: CallbackQuery, state: FSMContext) -> Non
     nomenclature = query.data
     pg_remove_stop_list(employee.id_store, nomenclature)
     await query.bot.send_message(
-        chat_id=TG_GROUP_NAMES.get(STOPS_TG, ""),
+        chat_id=STOPS_TG,
         text=f"➖⛔ {nomenclature} в {employee.store_name}",
     )
     await _to_dispatch(query.message, state, info=f"Сняли {nomenclature}")
