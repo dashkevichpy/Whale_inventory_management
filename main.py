@@ -21,6 +21,7 @@ from Conversations.conversationChooseWhale import (
 )
 from Conversations.conversationRegister import conversation_register
 from Conversations.conversationStoplist import conversation_stoplist
+from postgres import log_tables_structure
 
 load_dotenv()
 TOKEN = os.getenv("TG_TOKEN")
@@ -45,6 +46,15 @@ async def cmd_reset_store(message: Message, state: FSMContext) -> None:
     """Reset employee store choice."""
     logging.debug("cmd_reset_store from %s", message.from_user.id)
     await reset_store_employee(message, state)
+
+
+@router.message(Command("tab"))
+@check_group
+async def cmd_tab(message: Message) -> None:
+    """Log database table structures."""
+
+    await message.answer("Смотрим логи")
+    log_tables_structure()
 
 
 async def main() -> None:

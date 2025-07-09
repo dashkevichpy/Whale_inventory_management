@@ -472,5 +472,39 @@ def rererr():
     query_postgre(query)
 
 
+def _extract_table_names() -> set[str]:
+    """Return set of table names found in SQL queries of this module."""
+
+    with open(__file__, "r", encoding="utf-8") as file:
+        text = file.read()
+
+    patterns = [
+        r"FROM\s+(\w+)",
+        r"JOIN\s+(\w+)",
+        r"UPDATE\s+(\w+)",
+        r"INTO\s+(\w+)",
+        r"DELETE\s+FROM\s+(\w+)",
+    ]
+    tables: set[str] = set()
+    for pattern in patterns:
+        tables.update(re.findall(pattern, text, flags=re.IGNORECASE))
+    return tables
+
+
+def log_tables_structure() -> None:
+    """Write structure of used tables to log."""
+
+    tables = sorted(_extract_table_names())
+    for table in tables:
+        query = f"""
+            SELECT column_name, data_type
+            FROM information_schema.columns
+            WHERE table_name = '{table}'
+            ORDER BY ordinal_position;
+        """
+        result = query_postgre(query)
+        logging.info("Table %s structure: %s", table, result)
+
+
 
 
