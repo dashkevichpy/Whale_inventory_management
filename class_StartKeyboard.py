@@ -107,7 +107,7 @@ async def keyboard_start(
             department_name="Cashier",
             department_code="CASHIER",
             store_name="Test Store",
-            id_store=0,
+            id_store=1,
             invent_col=None,
         )
         logging.info("Use hardcoded cashier for %s", tel_id)
