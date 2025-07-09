@@ -49,7 +49,7 @@ from keyboards import (
     keyboard_cancel_conversation,
     keyboard_from_list,
 )
-from postgres import pg_get_employee_in_store
+from postgres import pg_get_employee_in_store_async
 
 
 load_dotenv()
@@ -183,7 +183,7 @@ async def start_stock_conversation(message: Message, state: FSMContext) -> None:
     """Entry point for stock actions."""
 
     await state.update_data(id_user_chat=message.chat.id)
-    if not pg_get_employee_in_store(message.chat.id):
+    if not await pg_get_employee_in_store_async(message.chat.id):
         await message.answer(
             text="Сначала выбери точку, где работаешь",
             reply_markup=await keyboard_start(message.chat.id, state),

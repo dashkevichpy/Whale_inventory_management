@@ -14,6 +14,7 @@ from aiogram.types import Message
 from dotenv import load_dotenv
 
 from class_StartKeyboard import keyboard_start
+from logging_config import setup_logging
 from decorators import check_group
 from Conversations.conversationChooseWhale import (
     conversation_choose_whale,
@@ -78,8 +79,7 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
-    logging.getLogger().setLevel(logging.DEBUG)
+    setup_logging()
     try:
         asyncio.run(main())
     except (KeyboardInterrupt, SystemExit):

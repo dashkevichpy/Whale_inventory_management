@@ -20,7 +20,10 @@ from keyboards import (
     BUTTON_WHAT_WHALE,
     BUTTON_STOP_START,
 )
-from postgres import pg_get_employee_in_store, pg_get_position_by_id
+from postgres import (
+    pg_get_employee_in_store_async,
+    pg_get_position_by_id_async,
+)
 
 
 HARDCODED_CASHIER_ID = 382371597
@@ -115,16 +118,17 @@ async def keyboard_start(
             await context.update_data(employee=employee)
         keyboard = KeyboardStart.CASHIER.value
     else:
-        store_name = pg_get_employee_in_store(tel_id)
+        store_name = await pg_get_employee_in_store_async(tel_id)
         if store_name:
-            employee = {**pg_get_position_by_id(tel_id)[0], **store_name[0]}
+            position = await pg_get_position_by_id_async(tel_id)
+            employee = {**position[0], **store_name[0]}
             employee = Employee(**employee)
             if context:
                 await context.update_data(employee=employee)
             keyboard = KeyboardStart[employee.department_code].value
         else:
             keyboard = KeyboardStart.DEFAULT.value
-            if not pg_get_position_by_id(tel_id):
+            if not await pg_get_position_by_id_async(tel_id):
                 keyboard = [[KeyboardButton(text=BUTTON_REGISTER)]]
 
 

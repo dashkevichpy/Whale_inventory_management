@@ -1,118 +1,20 @@
-2025-07-09 12:21:01,485 - asyncio - DEBUG - Using selector: KqueueSelector
-2025-07-09 12:21:01,485 - root - DEBUG - Starting bot
-2025-07-09 12:21:01,485 - root - DEBUG - conversation_choose_whale
-2025-07-09 12:21:01,503 - aiogram.dispatcher - INFO - Start polling
-2025-07-09 12:21:02,115 - aiogram.dispatcher - INFO - Run polling for bot @bImas_tas_bot id=7964566377 - 'bImas_tas_bot'
-2025-07-09 12:21:36,035 - root - DEBUG - cmd_start from 382371597
-2025-07-09 12:21:36,035 - root - INFO - Use hardcoded cashier for 382371597
-2025-07-09 12:21:36,599 - aiogram.event - INFO - Update id=996116876 is handled. Duration 564 ms by bot id=7964566377
-2025-07-09 12:21:38,231 - root - DEBUG - stoplist_start from 382371597
-2025-07-09 12:21:38,231 - root - DEBUG - Postgre query: 
-        SELECT nomenclature_name
-        FROM stop_list
-        INNER JOIN nomenclature USING(iiko_code)
-        WHERE id_store = 1 AND date_end_stop is NULL;
-    
-2025-07-09 12:21:38,805 - root - DEBUG - Result: []
-2025-07-09 12:21:39,168 - aiogram.event - INFO - Update id=996116877 is handled. Duration 938 ms by bot id=7964566377
-2025-07-09 12:21:40,422 - root - DEBUG - stoplist_add query=add
-2025-07-09 12:21:40,422 - root - DEBUG - Postgre query: 
-        (SELECT nomenclature_name
-            FROM nomenclature
-            WHERE stop_list is TRUE
-            EXCEPT
-            SELECT nomenclature_name
-            FROM stop_list
-            INNER JOIN store USING(id_store)
-            INNER JOIN nomenclature USING(iiko_code)
-            WHERE id_store = 1 AND date_end_stop is NULL)
-            INTERSECT
-            SELECT nomenclature_name
-            FROM store_nomenclature
-            INNER JOIN nomenclature USING(iiko_code)
-            WHERE id_store = 1
-            ORDER BY nomenclature_name;
-    
-2025-07-09 12:21:41,006 - root - DEBUG - Result: [('BBQ соус',), ('Банановый пудинг',), ('Бейгл Красная рыба',), ('Бекон рез.',), ('Булка 10',), ('Булка 13',), ('Булка ХД',), ('Вар. сгущенка трубочка',), ('Ветч.сыр сэндв.',), ('Вода 0,5',), ('Горчица',), ('Греческий салат',), ('Грибы жареные',), ('Грин энерджи салат',), ('Зелёный чай',), ('Зеленый чай "Ешен" с мятой',), ('Иван-чай',), ('Кетчуп',), ('Класс. лимонад',), ('Клюквенный лимонад',), ('Кляр КД',), ('Котлета 10',), ('Котлета 13',), ('Котлета Веджи',), ('Котлеты цыпленок',), ('Кремчиз трубочка',), ('Круассан миндаль',), ('Круассан шоколад',), ('Лук маринованный',), ('Луковые кольца',), ('Майо для веджи',), ('Облепиховый напиток',), ('Огурец ф.',), ('Основа для Цезаря',), ('пицца 4 сыра',), ('пицца BBQ соус',), ('пицца Баварская',), ('пицца барон бекон',), ('пицца ветчина грибы',), ('пицца пепперони',), ('Салат лист.',), ('Саянский чай',), ('Слайдер Булка',), ('Сливочная сосиска',), ('сливочный сыр',), ('Сосиски говядина',), ('Соус ДД',), ('Соус Ранч',), ('Сыр бургер',), ('Сырный соус',), ('Сырный суп',), ('Томат рез.',), ('Филе грудки курица',), ('Фри (порц)',), ('Халапеньо ф.',), ('Хлеб Сэндвич',), ('Цезарь сэндв.',), ('Черный чай пакет.',), ('Черный чай с чабрецом',), ('Чипсы',)]
-2025-07-09 12:21:41,415 - aiogram.event - INFO - Update id=996116878 is handled. Duration 994 ms by bot id=7964566377
-2025-07-09 12:21:43,148 - root - DEBUG - stoplist_add_select Сырный соус
-2025-07-09 12:21:43,148 - root - DEBUG - Postgre query: 
-            SET TIMEZONE='posix/Asia/Krasnoyarsk';
-            INSERT INTO stop_list (id_store, iiko_code, date_start_stop)
-            SELECT 1, nomenclature.iiko_code,  date_trunc('minute', now())
-            FROM nomenclature
-            WHERE nomenclature.nomenclature_name = 'Сырный соус';
-    
-2025-07-09 12:21:43,148 - root - INFO - TEST_MODE: skip query execution
-2025-07-09 12:21:43,274 - aiogram.event - INFO - Update id=996116879 is not handled. Duration 126 ms by bot id=7964566377
-2025-07-09 12:21:43,274 - aiogram.event - ERROR - Cause exception while process update id=996116879 by bot id=7964566377
-TelegramBadRequest: Telegram server says - Bad Request: chat_id is empty
-Traceback (most recent call last):
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/aiogram/dispatcher/dispatcher.py", line 309, in _process_update
-    response = await self.feed_update(bot, update, **kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/aiogram/dispatcher/dispatcher.py", line 158, in feed_update
-    response = await self.update.wrap_outer_middleware(
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/aiogram/dispatcher/middlewares/error.py", line 25, in __call__
-    return await handler(event, data)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/aiogram/dispatcher/middlewares/user_context.py", line 49, in __call__
-    return await handler(event, data)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/aiogram/fsm/middleware.py", line 42, in __call__
-    return await handler(event, data)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/aiogram/dispatcher/event/telegram.py", line 121, in trigger
-    return await wrapped_inner(event, kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/aiogram/dispatcher/event/handler.py", line 43, in call
-    return await wrapped()
-           ^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/aiogram/dispatcher/dispatcher.py", line 276, in _listen_update
-    return await self.propagate_event(update_type=update_type, event=event, **kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/aiogram/dispatcher/router.py", line 142, in propagate_event
-    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/aiogram/dispatcher/router.py", line 137, in _wrapped
-    return await self._propagate_event(
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/aiogram/dispatcher/router.py", line 170, in _propagate_event
-    response = await router.propagate_event(update_type=update_type, event=event, **kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/aiogram/dispatcher/router.py", line 142, in propagate_event
-    return await observer.wrap_outer_middleware(_wrapped, event=event, data=kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/aiogram/dispatcher/router.py", line 137, in _wrapped
-    return await self._propagate_event(
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/aiogram/dispatcher/router.py", line 162, in _propagate_event
-    response = await observer.trigger(event, **kwargs)
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/aiogram/dispatcher/event/telegram.py", line 121, in trigger
-    return await wrapped_inner(event, kwargs)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/aiogram/dispatcher/event/handler.py", line 43, in call
-    return await wrapped()
-           ^^^^^^^^^^^^^^^
-  File "/Users/konstantindashkecich/Downloads/SuperBot2_2/Conversations/conversationStoplist.py", line 207, in stoplist_add_select
-    await query.bot.send_message(
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/aiogram/client/bot.py", line 2869, in send_message
-    return await self(call, request_timeout=request_timeout)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/aiogram/client/bot.py", line 508, in __call__
-    return await self.session(self, method, timeout=request_timeout)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/aiogram/client/session/base.py", line 254, in __call__
-    return cast(TelegramType, await middleware(bot, method))
-                              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/aiogram/client/session/aiohttp.py", line 178, in make_request
-    response = self.check_response(
-               ^^^^^^^^^^^^^^^^^^^^
-  File "/Library/Frameworks/Python.framework/Versions/3.12/lib/python3.12/site-packages/aiogram/client/session/base.py", line 120, in check_response
-    raise TelegramBadRequest(method=method, message=description)
-aiogram.exceptions.TelegramBadRequest: Telegram server says - Bad Request: chat_id is empty
-2025-07-09 12:21:59,870 - aiogram.dispatcher - WARNING - Received SIGINT signal
-2025-07-09 12:21:59,871 - aiogram.dispatcher - INFO - Polling stopped for bot @bImas_tas_bot id=7964566377 - 'bImas_tas_bot'
-2025-07-09 12:21:59,871 - aiogram.dispatcher - INFO - Polling stopped
+2025-07-09 15:12:03,045 - aiogram.dispatcher - INFO - Start polling
+2025-07-09 15:12:03,631 - aiogram.dispatcher - INFO - Run polling for bot @bImas_tas_bot id=7964566377 - 'bImas_tas_bot'
+2025-07-09 15:12:23,924 - root - INFO - Use hardcoded cashier for 382371597
+2025-07-09 15:12:24,543 - aiogram.event - INFO - Update id=996116887 is handled. Duration 619 ms by bot id=7964566377
+2025-07-09 15:12:27,192 - aiogram.event - INFO - Update id=996116888 is handled. Duration 1121 ms by bot id=7964566377
+2025-07-09 15:12:29,414 - aiogram.event - INFO - Update id=996116889 is handled. Duration 888 ms by bot id=7964566377
+2025-07-09 15:12:30,570 - root - INFO - TEST_MODE: skip query execution
+2025-07-09 15:12:31,638 - aiogram.event - INFO - Update id=996116890 is handled. Duration 1069 ms by bot id=7964566377
+2025-07-09 15:12:34,890 - aiogram.event - INFO - Update id=996116891 is handled. Duration 890 ms by bot id=7964566377
+2025-07-09 15:12:35,915 - root - INFO - TEST_MODE: skip query execution
+2025-07-09 15:12:36,812 - aiogram.event - INFO - Update id=996116892 is handled. Duration 898 ms by bot id=7964566377
+2025-07-09 15:12:38,957 - root - INFO - Use hardcoded cashier for 382371597
+2025-07-09 15:12:39,157 - aiogram.event - INFO - Update id=996116893 is handled. Duration 202 ms by bot id=7964566377
+2025-07-09 15:12:40,751 - aiogram.event - INFO - Update id=996116894 is not handled. Duration 1 ms by bot id=7964566377
+2025-07-09 15:12:43,482 - aiogram.event - INFO - Update id=996116895 is not handled. Duration 1 ms by bot id=7964566377
+2025-07-09 15:12:44,832 - aiogram.event - INFO - Update id=996116896 is not handled. Duration 1 ms by bot id=7964566377
+2025-07-09 15:12:46,618 - aiogram.event - INFO - Update id=996116897 is not handled. Duration 1 ms by bot id=7964566377
+2025-07-09 15:13:12,416 - aiogram.dispatcher - WARNING - Received SIGINT signal
+2025-07-09 15:13:12,416 - aiogram.dispatcher - INFO - Polling stopped for bot @bImas_tas_bot id=7964566377 - 'bImas_tas_bot'
+2025-07-09 15:13:12,416 - aiogram.dispatcher - INFO - Polling stopped

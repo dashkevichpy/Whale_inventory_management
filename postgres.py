@@ -5,6 +5,7 @@ import re
 import pandas as pd
 import psycopg2
 from psycopg2.extras import DictCursor
+import asyncpg
 import numpy as np
 from tabulate import tabulate
 from sqlalchemy import create_engine
@@ -21,6 +22,26 @@ USER_PG = os.getenv('USER_PG')
 PASSWORD_PG = os.getenv('PASSWORD_PG')
 HOST_PG = os.getenv('HOST_PG')
 PORT_PG = os.getenv('PORT_PG')
+
+_pool: asyncpg.Pool | None = None
+
+
+async def _get_pool() -> asyncpg.Pool:
+    """Return global connection pool."""
+    global _pool
+    if _pool is None:
+        try:
+            _pool = await asyncpg.create_pool(
+                database=DBNAME_PG,
+                user=USER_PG,
+                password=PASSWORD_PG,
+                host=HOST_PG,
+                port=PORT_PG,
+            )
+        except Exception as exc:
+            logging.error("Failed to create pool: %s", exc)
+            raise
+    return _pool
 
 
 def append_df_pgre(df: pd.DataFrame, table_name: str, index: bool, index_label):
@@ -95,6 +116,52 @@ def query_postgre_factory(query: str):
     """Return query result as list of dictionaries."""
 
     result = query_postgre(query)
+    if not result:
+        return []
+    return [dict(row) for row in result]
+
+
+async def query_postgre_async(query: str):
+    """Execute SQL query asynchronously and return fetched rows."""
+
+    logging.debug("Postgre query: %s", query)
+    if TEST_MODE:
+        first_word = re.search(r"^\s*(?:\(+\s*)*(\w+)", query, re.IGNORECASE)
+        if first_word and first_word.group(1).lower() not in {"select", "with"}:
+            logging.info("TEST_MODE: skip query execution")
+            return None
+
+    pool = await _get_pool()
+    try:
+        async with pool.acquire() as conn:
+            return await conn.fetch(query)
+    except Exception as exc:
+        logging.error("Async query failed: %s", exc)
+        return None
+
+
+async def query_postgre_list_async(query: str):
+    """Return first column values from asynchronous query."""
+
+    result = await query_postgre_async(query)
+    if not result:
+        return []
+    return [row[0] for row in result]
+
+
+async def query_postgre_one_value_async(query: str):
+    """Return single value from asynchronous query."""
+
+    result = await query_postgre_async(query)
+    if result:
+        return result[0][0]
+    return None
+
+
+async def query_postgre_factory_async(query: str):
+    """Return asynchronous query as list of dictionaries."""
+
+    result = await query_postgre_async(query)
     if not result:
         return []
     return [dict(row) for row in result]
@@ -186,6 +253,19 @@ def get_stores_open(*args):
     return pgre_result
 
 
+async def get_stores_open_async(*args) -> np.ndarray:
+    """Asynchronously return array of columns for open stores."""
+
+    query = '''
+        SELECT {} FROM store
+        WHERE is_open is TRUE
+        '''.format(','.join(args))
+    result = await query_postgre_async(query)
+    if not result:
+        return np.array([])
+    return np.array(result)
+
+
 def pg_store(id_store) -> dict:
     """Return store data by ``id_store``."""
     query = '''
@@ -266,6 +346,17 @@ def pg_del_employee_from_store(id_tel):
     return query_postgre(query)
 
 
+async def pg_del_employee_from_store_async(id_tel: int):
+    """Asynchronously delete employee store assignment."""
+
+    query = '''
+                DELETE FROM employee_in_store
+            WHERE chat_id_telegram = {id_tel}
+            RETURNING id_employee_in_store
+    '''.format(id_tel=id_tel)
+    return await query_postgre_async(query)
+
+
 def pg_get_employee_in_store(tel_id: int):
     """Return store info for employee currently assigned."""
     query = f"""SELECT store_name, id_store
@@ -274,6 +365,35 @@ def pg_get_employee_in_store(tel_id: int):
                 WHERE chat_id_telegram = '{tel_id}'
                 """
     return query_postgre_factory(query)
+
+
+async def pg_get_position_by_id_async(tel_id: int):
+    """Asynchronously return employee position and department."""
+
+    query = '''
+        WITH temp AS(
+          SELECT *
+          FROM job_titles
+          INNER JOIN department USING(id_department)
+        )
+        SELECT  employee_name, temp.title as position, department_name, department_code, invent_col
+        FROM employee
+        INNER JOIN job_titles USING(id_job_titles)
+        INNER JOIN temp USING(id_job_titles)
+        WHERE employee_tlgr = {tel_id}
+    '''.format(tel_id=tel_id)
+    return await query_postgre_factory_async(query)
+
+
+async def pg_get_employee_in_store_async(tel_id: int):
+    """Asynchronously return store info for employee."""
+
+    query = f"""SELECT store_name, id_store
+                FROM employee_in_store
+                INNER JOIN store USING (id_store)
+                WHERE chat_id_telegram = '{tel_id}'
+                """
+    return await query_postgre_factory_async(query)
 
 
 def pg_get_employee_position(tel_id: int):

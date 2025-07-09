@@ -15,7 +15,12 @@ from dotenv import load_dotenv
 from class_StartKeyboard import keyboard_start
 from decorators import check_group
 from keyboards import BUTTON_WHAT_WHALE, keyboard_from_list
-from postgres import get_stores_open, pg_del_employee_from_store, query_postgre
+from postgres import (
+    get_stores_open_async,
+    pg_del_employee_from_store_async,
+    query_postgre_async,
+)
+
 
 load_dotenv()
 CHAT_TIMEOUT = int(os.getenv("CHAT_TIMEOUT"))
@@ -35,7 +40,7 @@ async def reset_store_employee(
     """Clear store assignment for user."""
     logging.debug("reset_store_employee for %s", message.from_user.id)
 
-    id_employee = pg_del_employee_from_store(message.chat.id)
+    id_employee = await pg_del_employee_from_store_async(message.chat.id)
     if id_employee:
         text = (
             f"Сбросили текущую точку,\n{BUTTON_WHAT_WHALE} - чтобы выбрать новую"
@@ -52,7 +57,7 @@ async def choose_whale_start(message: Message, state: FSMContext) -> None:
     """Send store list to user."""
     logging.debug("choose_whale_start from %s", message.from_user.id)
 
-    stores = np.array(get_stores_open("store_name")).flatten()
+    stores = np.array(await get_stores_open_async("store_name")).flatten()
     sent = await message.answer(
         text="Выбери точку:",
         reply_markup=keyboard_from_list(stores, 2),
@@ -76,7 +81,7 @@ async def assign_whale(query: CallbackQuery, state: FSMContext) -> None:
             FROM store
             WHERE store.store_name = '{whale}'
     """
-    query_postgre(query_db)
+    await query_postgre_async(query_db)
     try:
         await query.bot.delete_message(
             chat_id=data["id_user_chat"], message_id=data["id_message_to_delete"]
