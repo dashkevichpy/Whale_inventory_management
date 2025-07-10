@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Optional
+from aiogram.filters import StateFilter
 
 import numpy as np
 from aiogram import Router
@@ -359,7 +359,7 @@ async def error_cancel(
     await state.clear()
 
 
-@router.callback_query(ErrorState, state="*")
+@router.callback_query(StateFilter(ErrorState))
 async def timeout_callback_error(query: CallbackQuery, state: FSMContext) -> None:
     """Handle timeout for callback events."""
 
@@ -374,7 +374,7 @@ async def timeout_callback_error(query: CallbackQuery, state: FSMContext) -> Non
     await state.clear()
 
 
-@router.message(ErrorState, state="*")
+@router.message(StateFilter(ErrorState))
 async def timeout_message_error(message: Message, state: FSMContext) -> None:
     """Handle timeout for message events."""
 
