@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import logging
 import os
 from typing import Any
@@ -26,7 +27,11 @@ from postgres import query_postgre
 load_dotenv()
 TIME_ZONE = os.getenv("TIME_ZONE", "Asia/Krasnoyarsk")
 ERROR_ADMIN_ID = os.getenv("ERROR_ADMIN_ID")
-TG_GROUP_NAMES = eval(os.getenv("TG_GROUP_NAMES"))
+tg_groups = os.getenv("TG_GROUP_NAMES")
+if tg_groups:
+    TG_GROUP_NAMES = ast.literal_eval(tg_groups)
+else:
+    TG_GROUP_NAMES: dict[str, int] = {}
 OPERATION_BM = os.getenv("OPERATION_BM")
 CASHIER_TG = os.getenv("CASHIER_TG")
 CHAT_TIMEOUT = int(os.getenv("CHAT_TIMEOUT"))
