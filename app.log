@@ -1,0 +1,22 @@
+2025-07-10 11:38:00,474 - aiogram.dispatcher - INFO - Start polling
+2025-07-10 11:38:01,079 - aiogram.dispatcher - INFO - Run polling for bot @bImas_tas_bot id=7964566377 - 'bImas_tas_bot'
+2025-07-10 11:38:18,116 - root - INFO - Use hardcoded cashier for 382371597
+2025-07-10 11:38:18,734 - aiogram.event - INFO - Update id=996116898 is handled. Duration 618 ms by bot id=7964566377
+2025-07-10 11:38:22,178 - aiogram.event - INFO - Update id=996116899 is handled. Duration 1024 ms by bot id=7964566377
+2025-07-10 11:38:27,385 - aiogram.event - INFO - Update id=996116900 is handled. Duration 787 ms by bot id=7964566377
+2025-07-10 11:38:36,411 - root - INFO - Use hardcoded cashier for 382371597
+2025-07-10 11:38:36,594 - aiogram.event - INFO - Update id=996116901 is handled. Duration 198 ms by bot id=7964566377
+2025-07-10 11:38:38,102 - root - INFO - Use hardcoded cashier for 382371597
+2025-07-10 11:38:38,250 - aiogram.event - INFO - Update id=996116902 is handled. Duration 149 ms by bot id=7964566377
+2025-07-10 11:38:40,644 - aiogram.event - INFO - Update id=996116903 is handled. Duration 290 ms by bot id=7964566377
+2025-07-10 11:38:42,567 - root - INFO - Use hardcoded cashier for 382371597
+2025-07-10 11:38:42,726 - aiogram.event - INFO - Update id=996116904 is handled. Duration 163 ms by bot id=7964566377
+2025-07-10 11:38:45,713 - root - INFO - Use hardcoded cashier for 382371597
+2025-07-10 11:38:45,856 - aiogram.event - INFO - Update id=996116905 is handled. Duration 1379 ms by bot id=7964566377
+2025-07-10 11:38:48,118 - root - INFO - Use hardcoded cashier for 382371597
+2025-07-10 11:38:48,274 - aiogram.event - INFO - Update id=996116906 is handled. Duration 788 ms by bot id=7964566377
+2025-07-10 11:38:50,685 - aiogram.event - INFO - Update id=996116907 is handled. Duration 930 ms by bot id=7964566377
+2025-07-10 11:38:55,074 - aiogram.event - INFO - Update id=996116908 is not handled. Duration 14 ms by bot id=7964566377
+2025-07-10 11:39:29,942 - aiogram.dispatcher - WARNING - Received SIGINT signal
+2025-07-10 11:39:29,942 - aiogram.dispatcher - INFO - Polling stopped for bot @bImas_tas_bot id=7964566377 - 'bImas_tas_bot'
+2025-07-10 11:39:29,942 - aiogram.dispatcher - INFO - Polling stopped

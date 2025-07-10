@@ -224,7 +224,7 @@ async def callback_keyboard_processing(query: CallbackQuery, state: FSMContext) 
     await state.set_state(DeliveryWaitState.write_wait)
 
 
-@router.message(Text(BUTTON_DELIVERY_WAIT_CANCEL))
+@router.message(F.text == BUTTON_DELIVERY_WAIT_CANCEL)
 async def delivery_wait_cancel(message: Message, state: FSMContext) -> None:
     """Finish conversation and show start keyboard."""
 
